@@ -103,39 +103,49 @@ gboolean
 thrift_socket_open (ThriftTransport *transport, GError **error)
 {
   struct hostent *hp = NULL;
+#if defined(USE_IPV6)
+  struct sockaddr_in6 pin;
+#else
   struct sockaddr_in pin;
-  int err;
-#if defined(HAVE_GETHOSTBYNAME_R)
-  struct hostent he;
-  char buf[1024];
 #endif
+  int err;
+  struct sockaddr_storage result;
+  struct addrinfo* res = NULL;
+  struct addrinfo hints;
 
   ThriftSocket *tsocket = THRIFT_SOCKET (transport);
   g_return_val_if_fail (tsocket->sd == THRIFT_INVALID_SOCKET, FALSE);
 
-  /* lookup the destination host */
-#if defined(HAVE_GETHOSTBYNAME_R)
-  if (gethostbyname_r (tsocket->hostname, &he, buf, 1024, &hp, &err) != 0 || hp == NULL)
+  memset (&pin, 0, sizeof(pin));
+  memset(&hints, 0, sizeof(struct addrinfo));
+#if defined(USE_IPV6)
+  hints.ai_family = AF_INET6;
 #else
-  if ((hp = gethostbyname (tsocket->hostname)) == NULL && (err = h_errno))
+  hints.ai_family = AF_INET;
 #endif
-  {
-    /* host lookup failed, bail out with an error */
-    g_set_error (error, THRIFT_TRANSPORT_ERROR, THRIFT_TRANSPORT_ERROR_HOST,
-                 "host lookup failed for %s:%d - %s",
-                 tsocket->hostname, tsocket->port,
-                 hstrerror (err));
-    return FALSE;
-  }
+  hints.ai_socktype = SOCK_STREAM;
+  getaddrinfo(tsocket->hostname, NULL, &hints, &res);
+
+  memcpy(&result, res->ai_addr, res->ai_addrlen);
+#if defined(USE_IPV6)
+  pin.sin6_addr = ((struct sockaddr_in6*) &result)->sin6_addr;
+#else
+  pin.sin_addr.s_addr = ((struct sockaddr_in*) &result)->sin_addr.s_addr;
+#endif
 
   /* create a socket structure */
-  memset (&pin, 0, sizeof(pin));
+#if defined(USE_IPV6)
+  pin.sin6_family = AF_INET6;
+  pin.sin6_port = htons (tsocket->port); 
+  /* create the socket */ //TODO: change to SOCK_DGRAM
+  if ((tsocket->sd = socket (AF_INET6, SOCK_STREAM, 0)) == -1)
+#else
   pin.sin_family = AF_INET;
-  pin.sin_addr.s_addr = ((struct in_addr *) (hp->h_addr))->s_addr;
-  pin.sin_port = htons (tsocket->port); 
+  pin.sin_port = htons (tsocket->port);
 
-  /* create the socket */
+  /* create the socket */ //TODO: change to SOCK_DGRAM
   if ((tsocket->sd = socket (AF_INET, SOCK_STREAM, 0)) == -1)
+#endif
   {
     g_set_error (error, THRIFT_TRANSPORT_ERROR, THRIFT_TRANSPORT_ERROR_SOCKET,
                  "failed to create socket for host %s:%d - %s",

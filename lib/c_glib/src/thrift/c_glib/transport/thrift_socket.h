@@ -26,6 +26,8 @@
 
 G_BEGIN_DECLS
 
+#define USE_IPV6
+
 /*! \file thrift_socket.h
  *  \brief Socket implementation of a Thrift transport.  Subclasses the
  *         ThriftTransport class.
@@ -50,6 +52,7 @@ struct _ThriftSocket
 
   /* private */
   gchar *hostname;
+  gchar *ip;
   gshort port;
   int sd;
   guint8 *buf;

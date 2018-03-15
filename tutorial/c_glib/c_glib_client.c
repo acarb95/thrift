@@ -48,7 +48,7 @@ int main (void)
 #endif
 
   socket    = g_object_new (THRIFT_TYPE_SOCKET,
-                            "hostname",  "localhost",
+                            "hostname",  "0:0:102::",
                             "port",      9090,
                             NULL);
   transport = g_object_new (THRIFT_TYPE_BUFFERED_TRANSPORT,

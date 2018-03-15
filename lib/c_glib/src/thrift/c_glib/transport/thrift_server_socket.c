@@ -51,24 +51,34 @@ gboolean
 thrift_server_socket_listen (ThriftServerTransport *transport, GError **error)
 {
   int enabled = 1; /* for setsockopt() */
+#if defined(USE_IPV6)
+  struct sockaddr_in6 pin;
+#else
   struct sockaddr_in pin;
+#endif
   ThriftServerSocket *tsocket = THRIFT_SERVER_SOCKET (transport);
 
   /* create a address structure */
   memset (&pin, 0, sizeof(pin));
+#if defined(USE_IPV6)
+  pin.sin6_family = AF_INET6;
+  pin.sin6_addr = in6addr_any;
+  pin.sin6_port = htons(tsocket->port);
+  /* create a socket */ // TODO: change to SOCK_DGRAM, IPPROTO_UDP
+  if ((tsocket->sd = socket (AF_INET6, SOCK_STREAM, 0)) == -1)
+#else
   pin.sin_family = AF_INET;
   pin.sin_addr.s_addr = INADDR_ANY;
   pin.sin_port = htons(tsocket->port);
-
-  /* create a socket */
+  /* create a socket */ // TODO: change to SOCK_DGRAM, IPPROTO_UDP
   if ((tsocket->sd = socket (AF_INET, SOCK_STREAM, 0)) == -1)
+#endif
   {
     g_set_error (error, THRIFT_SERVER_SOCKET_ERROR,
                  THRIFT_SERVER_SOCKET_ERROR_SOCKET,
                  "failed to create socket - %s", strerror (errno));
     return FALSE;
   }
-
   if (setsockopt(tsocket->sd, SOL_SOCKET, SO_REUSEADDR, &enabled,
                  sizeof(enabled)) == -1)
   {
@@ -77,7 +87,7 @@ thrift_server_socket_listen (ThriftServerTransport *transport, GError **error)
                  "unable to set SO_REUSEADDR - %s", strerror(errno));
     return FALSE;
   }
-
+  
   /* bind to the socket */
   if (bind(tsocket->sd, (struct sockaddr *) &pin, sizeof(pin)) == -1)
   {
