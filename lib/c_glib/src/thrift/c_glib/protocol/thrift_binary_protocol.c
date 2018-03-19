@@ -392,6 +392,7 @@ thrift_binary_protocol_read_message_begin (ThriftProtocol *protocol,
   gint32 xfer = 0;
   gint32 sz;
 
+  g_message("thrift_binary_protocol_read_message_begin: Reading first 32 bit number.");
   if ((ret = thrift_protocol_read_i32 (protocol, &sz, error)) < 0)
   {
     return -1;
@@ -400,6 +401,7 @@ thrift_binary_protocol_read_message_begin (ThriftProtocol *protocol,
 
   if (sz < 0)
   {
+    g_message("thrift_binary_protocol: sz is %d", sz);
     /* check for version */
     guint32 version = sz & THRIFT_BINARY_PROTOCOL_VERSION_MASK;
     if (version != THRIFT_BINARY_PROTOCOL_VERSION_1)

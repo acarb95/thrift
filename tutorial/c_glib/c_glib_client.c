@@ -22,13 +22,13 @@
 
 #include <thrift/c_glib/protocol/thrift_binary_protocol.h>
 #include <thrift/c_glib/transport/thrift_buffered_transport.h>
-#include <thrift/c_glib/transport/thrift_socket.h>
+#include <thrift/c_glib/transport/thrift_udp_socket.h>
 
 #include "gen-c_glib/calculator.h"
 
 int main (void)
 {
-  ThriftSocket *socket;
+  ThriftUDPSocket *socket;
   ThriftTransport *transport;
   ThriftProtocol *protocol;
   CalculatorIf *client;
@@ -47,7 +47,7 @@ int main (void)
   g_type_init ();
 #endif
 
-  socket    = g_object_new (THRIFT_TYPE_SOCKET,
+  socket    = g_object_new (THRIFT_TYPE_UDP_SOCKET,
                             "hostname",  "0:0:102::",
                             "port",      9090,
                             NULL);
@@ -57,9 +57,9 @@ int main (void)
   protocol  = g_object_new (THRIFT_TYPE_BINARY_PROTOCOL,
                             "transport", transport,
                             NULL);
-
+  g_message("Opening transport");
   thrift_transport_open (transport, &error);
-
+  g_message("Creating client object");
 
   /* In the C (GLib) implementation of Thrift, service methods on the
      server are accessed via a generated client class that implements

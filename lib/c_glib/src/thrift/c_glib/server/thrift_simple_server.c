@@ -39,8 +39,10 @@ thrift_simple_server_serve (ThriftServer *server, GError **error)
     tss->running = TRUE;
     while (tss->running == TRUE)
     {
-      t = thrift_server_transport_accept (server->server_transport,
+        g_message("Before accept call.");
+        t = thrift_server_transport_accept (server->server_transport,
                                           error);
+        g_message("Got a connection.");
       if (t != NULL && tss->running) {
         input_transport =
           THRIFT_TRANSPORT_FACTORY_GET_CLASS (server->input_transport_factory)

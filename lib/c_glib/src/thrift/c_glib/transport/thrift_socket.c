@@ -63,6 +63,7 @@ thrift_socket_peek (ThriftTransport *transport, GError **error)
 
   if (thrift_socket_is_open (transport))
   {
+    // TODO: change to recvfrom (recv is normally for connections)
     r = recv (socket->sd, &buf, 1, MSG_PEEK);
     if (r == -1)
     {
@@ -102,13 +103,11 @@ thrift_socket_peek (ThriftTransport *transport, GError **error)
 gboolean
 thrift_socket_open (ThriftTransport *transport, GError **error)
 {
-  struct hostent *hp = NULL;
 #if defined(USE_IPV6)
   struct sockaddr_in6 pin;
 #else
   struct sockaddr_in pin;
 #endif
-  int err;
   struct sockaddr_storage result;
   struct addrinfo* res = NULL;
   struct addrinfo hints;
@@ -137,13 +136,13 @@ thrift_socket_open (ThriftTransport *transport, GError **error)
 #if defined(USE_IPV6)
   pin.sin6_family = AF_INET6;
   pin.sin6_port = htons (tsocket->port); 
-  /* create the socket */ //TODO: change to SOCK_DGRAM
+  /* create the socket */
   if ((tsocket->sd = socket (AF_INET6, SOCK_STREAM, 0)) == -1)
 #else
   pin.sin_family = AF_INET;
   pin.sin_port = htons (tsocket->port);
 
-  /* create the socket */ //TODO: change to SOCK_DGRAM
+  /* create the socket */
   if ((tsocket->sd = socket (AF_INET, SOCK_STREAM, 0)) == -1)
 #endif
   {
@@ -154,7 +153,7 @@ thrift_socket_open (ThriftTransport *transport, GError **error)
     return FALSE;
   }
 
-  /* open a connection */
+  // open a connection
   if (connect (tsocket->sd, (struct sockaddr *) &pin, sizeof(pin)) == -1)
   {
     g_set_error (error, THRIFT_TRANSPORT_ERROR, THRIFT_TRANSPORT_ERROR_CONNECT,
@@ -211,7 +210,7 @@ thrift_socket_read (ThriftTransport *transport, gpointer buf,
 }
 
 /* implements thrift_transport_read_end
- * called when write is complete.  nothing to do on our end. */
+ * called when read is complete.  nothing to do on our end. */
 gboolean
 thrift_socket_read_end (ThriftTransport *transport, GError **error)
 {

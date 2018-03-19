@@ -28,7 +28,7 @@
 #include <thrift/c_glib/server/thrift_server.h>
 #include <thrift/c_glib/server/thrift_simple_server.h>
 #include <thrift/c_glib/transport/thrift_buffered_transport_factory.h>
-#include <thrift/c_glib/transport/thrift_server_socket.h>
+#include <thrift/c_glib/transport/thrift_server_udp_socket.h>
 #include <thrift/c_glib/transport/thrift_server_transport.h>
 
 #include "gen-c_glib/calculator.h"
@@ -464,7 +464,7 @@ int main (void)
   /* Create our server socket, which binds to the specified port and
      listens for client connections */
   server_transport =
-    g_object_new (THRIFT_TYPE_SERVER_SOCKET,
+    g_object_new (THRIFT_TYPE_SERVER_UDP_SOCKET,
                   "port", 9090,
                   NULL);
 

@@ -36,7 +36,7 @@ thrift_dispatch_processor_process (ThriftProcessor *processor,
   gint32 seqid;
   ThriftDispatchProcessor *dispatch_processor =
     THRIFT_DISPATCH_PROCESSOR (processor);
-
+  g_message("thrift_dispatch_processor: reading in message.");
   /* Read the start of the message, which we expect to be a method call */
   if (thrift_protocol_read_message_begin (in,
                                           &fname,

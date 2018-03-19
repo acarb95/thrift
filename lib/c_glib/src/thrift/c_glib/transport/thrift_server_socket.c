@@ -65,13 +65,13 @@ thrift_server_socket_listen (ThriftServerTransport *transport, GError **error)
   pin.sin6_addr = in6addr_any;
   pin.sin6_port = htons(tsocket->port);
   /* create a socket */ // TODO: change to SOCK_DGRAM, IPPROTO_UDP
-  if ((tsocket->sd = socket (AF_INET6, SOCK_STREAM, 0)) == -1)
+  if ((tsocket->sd = socket (AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) == -1)
 #else
   pin.sin_family = AF_INET;
   pin.sin_addr.s_addr = INADDR_ANY;
   pin.sin_port = htons(tsocket->port);
   /* create a socket */ // TODO: change to SOCK_DGRAM, IPPROTO_UDP
-  if ((tsocket->sd = socket (AF_INET, SOCK_STREAM, 0)) == -1)
+  if ((tsocket->sd = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
 #endif
   {
     g_set_error (error, THRIFT_SERVER_SOCKET_ERROR,
@@ -87,7 +87,7 @@ thrift_server_socket_listen (ThriftServerTransport *transport, GError **error)
                  "unable to set SO_REUSEADDR - %s", strerror(errno));
     return FALSE;
   }
-  
+
   /* bind to the socket */
   if (bind(tsocket->sd, (struct sockaddr *) &pin, sizeof(pin)) == -1)
   {
@@ -98,6 +98,7 @@ thrift_server_socket_listen (ThriftServerTransport *transport, GError **error)
     return FALSE;
   }
 
+  // TODO: cannot do with UDP
   if (listen(tsocket->sd, tsocket->backlog) == -1)
   {
     g_set_error (error, THRIFT_SERVER_SOCKET_ERROR,
@@ -110,6 +111,8 @@ thrift_server_socket_listen (ThriftServerTransport *transport, GError **error)
   return TRUE;
 }
 
+// TODO: cannot do with UDP. Need to write special version that performs
+// the same actions but with UDP. 
 ThriftTransport *
 thrift_server_socket_accept (ThriftServerTransport *transport, GError **error)
 {

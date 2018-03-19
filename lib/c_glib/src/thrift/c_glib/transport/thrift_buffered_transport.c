@@ -138,7 +138,7 @@ thrift_buffered_transport_read (ThriftTransport *transport, gpointer buf,
                                 guint32 len, GError **error)
 {
   ThriftBufferedTransport *t = THRIFT_BUFFERED_TRANSPORT (transport);
-
+  g_message("thrift_buffered_transport_read: checking if in buffer.");
   /* if we have enough buffer data to fulfill the read, just use
    * a memcpy */
   if (len <= t->r_buf->len)
@@ -147,7 +147,7 @@ thrift_buffered_transport_read (ThriftTransport *transport, gpointer buf,
     g_byte_array_remove_range (t->r_buf, 0, len);
     return len;
   }
-
+  g_message("thrift_buffered_transport_read: calling read_slow.");
   return thrift_buffered_transport_read_slow (transport, buf, len, error);
 }
 
