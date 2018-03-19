@@ -52,19 +52,19 @@ struct _ThriftUDPSocket
   ThriftTransport parent;
 
   /* private */
-  gchar *hostname;
+  gchar *hostname;                // String hostname of the machine we "connect" to (TCP legacy)
 #if defined(USE_IPV6)
-  struct sockaddr_in6 *conn_sock;
+  struct sockaddr_in6 *conn_sock; // The socket we should be sending to
 #else
-  struct sockaddr_in *conn_sock;
+  struct sockaddr_in *conn_sock;  // The socket we should be sending to
 #endif
-  socklen_t conn_size;
-  gshort port;
-  gboolean server; // Determines if this socket was created by a client or server
-  int sd;
-  guint8 *buf;
-  guint32 buf_size;
-  guint32 buf_len;
+  socklen_t conn_size;            // The size of our sockaddr connection (either sizeof(sockaddr_in) or sizeof(sockaddr_in6))
+  gshort port;                    // The port this socket was initialized to connect to (TCP legacy)
+  gboolean server;                // Determines if this socket was created by a client or server
+  int sd;                         // The socket descriptor
+  GByteArray *buf;                // Used to store the UDP datagram for reading
+  guint32 buf_size;               // Must be larger than the largest possible datagram
+  // guint32 buf_len;                // The occupied length of the buffer
 };
 
 typedef struct _ThriftUDPSocketClass ThriftUDPSocketClass;

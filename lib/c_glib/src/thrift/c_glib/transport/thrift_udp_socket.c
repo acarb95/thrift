@@ -242,10 +242,28 @@ thrift_udp_socket_read (ThriftTransport *transport, gpointer buf,
 
   ThriftUDPSocket *socket = THRIFT_UDP_SOCKET (transport);
 
-  while (got < len)
-  {
-    // UDP_CHANGE: switched from recv to recvfrom
-    ret = recvfrom (socket->sd, buf+got, len-got, 0, (struct sockaddr *) &src_addr, &srcaddrlen);
+  guchar buffer[socket->buf_size]; // Largest message we can hold
+
+  struct iovec iov[1];
+  iov[0].iov_base = buffer;
+  iov[0].iov_len = sizeof(buffer);
+
+  struct msghdr message;
+  message.msg_name = &src_addr;
+  message.msg_namelen = srcaddrlen;
+  message.msg_iov = iov;
+  message.msg_iovlen = 1;
+  message.msg_control = 0;
+  message.msg_controllen = 0;
+
+  // TODO: change to read the entire message, append it to the buffer. 
+  // while (got < len)
+  // {
+    // UDP_CHANGE: switched from recv to recvmsg
+    g_message("thrift_udp_socket_read: calling recvfrom with len %u", len);
+    // ret = recvfrom (socket->sd, buf+got, len-got, 0, (struct sockaddr *) &src_addr, &srcaddrlen);
+    ret = recvmsg (socket->sd, &message, 0);
+    g_message("thrift_udp_socket_read: read %d", ret);
     if (ret <= 0)
     {
       g_set_error (error, THRIFT_TRANSPORT_ERROR,
@@ -254,7 +272,9 @@ thrift_udp_socket_read (ThriftTransport *transport, gpointer buf,
       return -1;
     }
     got += ret;
-  }
+  // }
+  // socket->buf = g_byte_array_append (socket->buf, buffer, got);
+  memcpy(buf, buffer, (got > len) ? got : len); // TODO: risk of buffer overflow if got > buf size
 
   // UDP_CHANGE: check to see what address sent the message, if conn_sock isn't set, set it.
   if (((struct sockaddr*) socket->conn_sock)->sa_family == 0) {
@@ -297,7 +317,7 @@ thrift_udp_socket_write (ThriftTransport *transport, const gpointer buf,
     // UDP_CHANGE: should just work for UDP assuming we call connect.
     // We are assuming that UDP connect is sent to the correct server
     // address to begin with.
-    // g_message("Calling sendto");
+    g_message("thrift_udp_socket_write: calling sendto with total len of %u", len);
     ret = sendto (socket->sd, buf + sent, len - sent, 0, (struct sockaddr *) socket->conn_sock, socket->conn_size);
     if (ret < 0)
     {
@@ -348,6 +368,9 @@ thrift_udp_socket_init (ThriftUDPSocket *socket)
   socket->conn_sock = (struct sockaddr_in*)malloc(sizeof(struct sockaddr_in));
   socket->conn_size = sizeof(struct sockaddr_in);
 #endif
+  // TODO: initialize the buffer
+  socket->buf = g_byte_array_new();
+  socket->buf_size = 512;
 }
 
 /* destructor */
@@ -373,8 +396,15 @@ thrift_udp_socket_finalize (GObject *object)
   }
   socket->conn_size = 0;
   socket->conn_sock = NULL;
+
+  if (socket->buf != NULL) {
+    g_byte_array_free(socket->buf, TRUE);
+  }
+  socket->buf = NULL;
+  socket->buf_size = 0;
 }
 
+// TODO: add buf size as a param
 /* property accessor */
 void
 thrift_udp_socket_get_property (GObject *object, guint property_id,

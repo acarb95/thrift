@@ -79,12 +79,14 @@ int main (void)
      On success, client methods return TRUE. A return value of FALSE
      indicates an error occured and the error parameter has been
      set. */
+  g_message("Calling ping...");
   if (!error && calculator_if_ping (client, &error)) {
     puts ("ping()");
   }
 
   /* Service methods that return a value do so by passing the result
      back via an output parameter (here, "sum"). */
+  g_message("Calling add...");
   if (!error && calculator_if_add (client, &sum, 1, 1, &error)) {
     printf ("1+1=%d\n", sum);
   }
@@ -102,6 +104,7 @@ int main (void)
 
     /* Exceptions are passed back from service methods in a manner
        similar to return values. */
+    g_message("Calling invalid op calculate...");
     if (calculator_if_calculate (client,
                                  NULL,
                                  1,
@@ -138,6 +141,7 @@ int main (void)
                   "op",   OPERATION_SUBTRACT,
                   NULL);
 
+    g_message("Calling subtraction calculation...");
     if (calculator_if_calculate (client,
                                  &diff,
                                  1,
@@ -160,6 +164,7 @@ int main (void)
        the SharedService service. Correspondingly, in the generated
        code CalculatorIf inherits from SharedServiceIf, and the parent
        service's methods are accessible through a simple cast. */
+    g_message("Calling get struct...");
     if (shared_service_client_get_struct (SHARED_SERVICE_IF (client),
                                           &shared_struct,
                                           1,

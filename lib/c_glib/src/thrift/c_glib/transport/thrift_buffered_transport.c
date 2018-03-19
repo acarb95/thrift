@@ -80,7 +80,7 @@ thrift_buffered_transport_read_slow (ThriftTransport *transport, gpointer buf,
   gint ret = 0;
   guint32 want = len;
   guint32 got = 0;
-  guchar tmpdata[len];
+  guchar tmpdata[t->r_buf_size]; // UDP_CHANGE: make the buffer the max we can read
   guint32 have = t->r_buf->len;
 
   // we shouldn't hit this unless the buffer doesn't have enough to read
@@ -89,6 +89,7 @@ thrift_buffered_transport_read_slow (ThriftTransport *transport, gpointer buf,
   // first copy what we have in our buffer.
   if (have > 0)
   {
+    g_message("thrift_buffered_transport_read_slow: copying what we have...");
     memcpy (buf, t->r_buf, t->r_buf->len);
     want -= t->r_buf->len;
     t->r_buf = g_byte_array_remove_range (t->r_buf, 0, t->r_buf->len);
@@ -99,24 +100,29 @@ thrift_buffered_transport_read_slow (ThriftTransport *transport, gpointer buf,
   // enough to satisfy the read.
   if (t->r_buf_size < want)
   {
+    g_message("thrift_buffered_transport_read_slow: calling socket read with insufficient buffer");
     if ((ret = THRIFT_TRANSPORT_GET_CLASS (t->transport)->read (t->transport,
                                                                 tmpdata,
                                                                 want,
                                                                 error)) < 0) {
       return ret;
     }
+    g_message("thrift_buffered_transport_read_slow: socket read %d", ret);
     got += ret;
 
     // copy the data starting from where we left off
     memcpy (buf + have, tmpdata, got);
     return got + have; 
   } else {
+    // TODO: change this to read the entire message, then copy the entire message over to the read buffer.
+    g_message("thrift_buffered_transport_read_slow: calling socket read");
     if ((ret = THRIFT_TRANSPORT_GET_CLASS (t->transport)->read (t->transport,
                                                                 tmpdata,
                                                                 want,
                                                                 error)) < 0) {
       return ret;
     }
+    g_message("thrift_buffered_transport_read_slow: socket read %d", ret);
     got += ret;
     t->r_buf = g_byte_array_append (t->r_buf, tmpdata, got);
     
@@ -139,15 +145,17 @@ thrift_buffered_transport_read (ThriftTransport *transport, gpointer buf,
 {
   ThriftBufferedTransport *t = THRIFT_BUFFERED_TRANSPORT (transport);
   g_message("thrift_buffered_transport_read: checking if in buffer.");
+  g_message("\tlen = %u, r_buf->len = %u", len, t->r_buf->len);
   /* if we have enough buffer data to fulfill the read, just use
    * a memcpy */
   if (len <= t->r_buf->len)
   {
+    g_message("thrift_buffered_transport_read: data in buffer");
     memcpy (buf, t->r_buf->data, len);
     g_byte_array_remove_range (t->r_buf, 0, len);
     return len;
   }
-  g_message("thrift_buffered_transport_read: calling read_slow.");
+  g_message("thrift_buffered_transport_read: calling read_slow with len %u", len);
   return thrift_buffered_transport_read_slow (transport, buf, len, error);
 }
 
@@ -170,6 +178,7 @@ thrift_buffered_transport_write_slow (ThriftTransport *transport, gpointer buf,
   guint32 have_bytes = t->w_buf->len;
   guint32 space = t->w_buf_size - t->w_buf->len;
 
+  g_message("thrift_buffered_transport_write_slow: sending stuff over the wire");
   // we need two syscalls because the buffered data plus the buffer itself
   // is too big.
   if ((have_bytes + len >= 2*t->w_buf_size) || (have_bytes == 0))
@@ -213,13 +222,17 @@ thrift_buffered_transport_write (ThriftTransport *transport,
 {
   ThriftBufferedTransport *t = THRIFT_BUFFERED_TRANSPORT (transport);
 
+  g_message("thrift_buffered_transport_write: checking to see if the data to write fits in the buffer.");
+  g_message("\tw_buf->len = %u, len = %u, w_buf_size = %u", t->w_buf->len, len, t->w_buf_size);
   /* the length of the current buffer plus the length of the data being read */
   if (t->w_buf->len + len <= t->w_buf_size)
   {
+    g_message("thrift_buffered_transport_write: appending data to buffer");
     t->w_buf = g_byte_array_append (t->w_buf, buf, len);
     return len;
   }
 
+  g_message("thrift_buffered_transport_write: calling slow write");
   return thrift_buffered_transport_write_slow (transport, buf, len, error);
 }
 
