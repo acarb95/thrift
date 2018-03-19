@@ -141,7 +141,7 @@ thrift_server_udp_socket_accept (ThriftServerTransport *transport, GError **erro
 
   ThriftServerUDPSocket *tsocket = THRIFT_SERVER_UDP_SOCKET (transport);
 
-  g_message("Waiting for setup message.");
+  // g_message("Waiting for setup message.");
   // UDP_CHANGE: switch from accept to recvfrom. When we get a request, we spawn a new
   // socket to handle that request. 
   // Peek to see the data and where it is from, when the socket is returned, the server
@@ -164,7 +164,7 @@ thrift_server_udp_socket_accept (ThriftServerTransport *transport, GError **erro
   inet_ntop(fam, &(address.sin_addr), addr, INET_ADDRSTRLEN);
 #endif
 
-  g_message("Creating a new socket with addr: %s and port %u", addr, port);
+  // g_message("Creating a new socket with addr: %s and port %u", addr, port);
   socket = g_object_new (THRIFT_TYPE_UDP_SOCKET, "hostname", addr, "port", port, "server", TRUE, NULL);
 
   if (!THRIFT_TRANSPORT_GET_CLASS(THRIFT_TRANSPORT(socket))->open(THRIFT_TRANSPORT(socket), error)) {
