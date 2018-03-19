@@ -131,7 +131,7 @@ thrift_udp_socket_open (ThriftTransport *transport, GError **error)
   ThriftUDPSocket *tsocket = THRIFT_UDP_SOCKET (transport);
   g_return_val_if_fail (tsocket->sd == THRIFT_INVALID_SOCKET, FALSE);
 
-  g_message("Getting hostname and port from %s:%hu", tsocket->hostname, tsocket->port);
+  // g_message("Getting hostname and port from %s:%hu", tsocket->hostname, tsocket->port);
   memset (&pin, 0, sizeof(pin));
   memset(&hints, 0, sizeof(struct addrinfo));
   
@@ -155,12 +155,12 @@ thrift_udp_socket_open (ThriftTransport *transport, GError **error)
   pin.sin_family = fam;
   pin.sin_port = htons(tsocket->port);
 #endif
-  g_message("Creating socket...");
+  // g_message("Creating socket...");
   // create the socket
   // UDP_CHANGE: switched to SOCK_DGRAM from SOCK_STREAM
   if ((tsocket->sd = socket (fam, SOCK_DGRAM, 0)) == -1)
   {
-    g_message("socket failed...");
+    // g_message("socket failed...");
     g_set_error (error, THRIFT_TRANSPORT_ERROR, THRIFT_TRANSPORT_ERROR_SOCKET,
                  "failed to create socket for host %s:%d - %s",
                  tsocket->hostname, tsocket->port,
@@ -184,7 +184,7 @@ thrift_udp_socket_open (ThriftTransport *transport, GError **error)
   if (!tsocket->server) {
     gint32 val = 3;
 
-    g_message("Sending setup message to %s:%u", tsocket->hostname, tsocket->port);
+    // g_message("Sending setup message to %s:%u", tsocket->hostname, tsocket->port);
     memcpy(tsocket->conn_sock, &pin, sizeof(pin));
     tsocket->conn_size = sizeof(pin);
     // UDP_CHANGE: send dummy message to server (like a handshake)
@@ -192,7 +192,7 @@ thrift_udp_socket_open (ThriftTransport *transport, GError **error)
 
     memset(tsocket->conn_sock, 0, tsocket->conn_size); // unset it
 
-    g_message("Waiting for response.");
+    // g_message("Waiting for response.");
     THRIFT_TRANSPORT_GET_CLASS(transport)->read(transport, (const gpointer) &val, 1, error);
   } else {
     memcpy(tsocket->conn_sock, &pin, sizeof(pin));
@@ -260,10 +260,10 @@ thrift_udp_socket_read (ThriftTransport *transport, gpointer buf,
   // while (got < len)
   // {
     // UDP_CHANGE: switched from recv to recvmsg
-    g_message("thrift_udp_socket_read: calling recvfrom with len %u", len);
+    // g_message("thrift_udp_socket_read: calling recvfrom with len %u", len);
     // ret = recvfrom (socket->sd, buf+got, len-got, 0, (struct sockaddr *) &src_addr, &srcaddrlen);
     ret = recvmsg (socket->sd, &message, 0);
-    g_message("thrift_udp_socket_read: read %d", ret);
+    // g_message("thrift_udp_socket_read: read %d", ret);
     if (ret <= 0)
     {
       g_set_error (error, THRIFT_TRANSPORT_ERROR,
@@ -278,7 +278,7 @@ thrift_udp_socket_read (ThriftTransport *transport, gpointer buf,
 
   // UDP_CHANGE: check to see what address sent the message, if conn_sock isn't set, set it.
   if (((struct sockaddr*) socket->conn_sock)->sa_family == 0) {
-    g_message("thrift_udp_socket_read: Setting connection socket with new address.");
+    // g_message("thrift_udp_socket_read: Setting connection socket with new address.");
     memcpy(socket->conn_sock, &src_addr, addrlen);
     socket->conn_size = addrlen;
   }
@@ -317,7 +317,7 @@ thrift_udp_socket_write (ThriftTransport *transport, const gpointer buf,
     // UDP_CHANGE: should just work for UDP assuming we call connect.
     // We are assuming that UDP connect is sent to the correct server
     // address to begin with.
-    g_message("thrift_udp_socket_write: calling sendto with total len of %u", len);
+    // g_message("thrift_udp_socket_write: calling sendto with total len of %u", len);
     ret = sendto (socket->sd, buf + sent, len - sent, 0, (struct sockaddr *) socket->conn_sock, socket->conn_size);
     if (ret < 0)
     {
