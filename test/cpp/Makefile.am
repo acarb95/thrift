@@ -102,7 +102,7 @@ AM_CXXFLAGS = -Wall -Wextra -pedantic
 AM_LDFLAGS = $(BOOST_LDFLAGS) $(LIBEVENT_LDFLAGS)
 
 clean-local:
-	$(RM) -r gen-cpp
+	$(RM) gen-cpp/*
 
 EXTRA_DIST = \
 	src/TestClient.cpp \

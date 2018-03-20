@@ -22,65 +22,66 @@ AC_PREREQ(2.65)
 AC_INIT([thrift], [0.9.2])
 
 AC_CONFIG_AUX_DIR([.])
+#subdir-objects
 
 AM_INIT_AUTOMAKE([1.13 tar-ustar])
 PKG_PROG_PKG_CONFIG
 
-AC_ARG_VAR([PY_PREFIX], [Prefix for installing Python modules.
-                         (Normal --prefix is ignored for Python because
-                         Python has different conventions.)
-                         Default = "/usr"])
-AS_IF([test "x$PY_PREFIX" = x], [PY_PREFIX="/usr"])
+# AC_ARG_VAR([PY_PREFIX], [Prefix for installing Python modules.
+#                          (Normal --prefix is ignored for Python because
+#                          Python has different conventions.)
+#                          Default = "/usr"])
+# AS_IF([test "x$PY_PREFIX" = x], [PY_PREFIX="/usr"])
 
-AC_ARG_VAR([JAVA_PREFIX], [Prefix for installing the Java lib jar.
-                           (Normal --prefix is ignored for Java because
-                           Java has different conventions.)
-                           Default = "/usr/local/lib"])
-AS_IF([test "x$JAVA_PREFIX" = x], [JAVA_PREFIX="/usr/local/lib"])
+# AC_ARG_VAR([JAVA_PREFIX], [Prefix for installing the Java lib jar.
+#                            (Normal --prefix is ignored for Java because
+#                            Java has different conventions.)
+#                            Default = "/usr/local/lib"])
+# AS_IF([test "x$JAVA_PREFIX" = x], [JAVA_PREFIX="/usr/local/lib"])
 
-AC_ARG_VAR([RUBY_PREFIX], [Prefix for installing Ruby modules.
-                           (Normal --prefix is ignored for Ruby because
-                           Ruby has different conventions.)
-                           Default = none, let ruby setup decide])
+# AC_ARG_VAR([RUBY_PREFIX], [Prefix for installing Ruby modules.
+#                            (Normal --prefix is ignored for Ruby because
+#                            Ruby has different conventions.)
+#                            Default = none, let ruby setup decide])
 
-AC_ARG_VAR([PHP_PREFIX], [Prefix for installing PHP modules.
-                         (Normal --prefix is ignored for PHP because
-                         PHP has different conventions.)
-                         Default = "/usr/lib/php"])
-AS_IF([test "x$PHP_PREFIX" = x], [PHP_PREFIX="/usr/lib/php"])
+# AC_ARG_VAR([PHP_PREFIX], [Prefix for installing PHP modules.
+#                          (Normal --prefix is ignored for PHP because
+#                          PHP has different conventions.)
+#                          Default = "/usr/lib/php"])
+# AS_IF([test "x$PHP_PREFIX" = x], [PHP_PREFIX="/usr/lib/php"])
 
-AC_ARG_VAR([PHP_CONFIG_PREFIX],
-           [Prefix for installing PHP extension module .ini file.
-            (Normal --prefix is ignored for PHP because PHP has
-             different conventions.)
-           Default = "/etc/php.d"])
-AS_IF([test "x$PHP_CONFIG_PREFIX" = x], [PHP_CONFIG_PREFIX="/etc/php.d"])
+# AC_ARG_VAR([PHP_CONFIG_PREFIX],
+#            [Prefix for installing PHP extension module .ini file.
+#             (Normal --prefix is ignored for PHP because PHP has
+#              different conventions.)
+#            Default = "/etc/php.d"])
+# AS_IF([test "x$PHP_CONFIG_PREFIX" = x], [PHP_CONFIG_PREFIX="/etc/php.d"])
 
-AC_ARG_VAR([INSTALLDIRS], [When installing Perl modules, specifies which
-                           of the sets of installation directories
-                           to choose: perl, site or vendor.
-                           Default = "vendor"])
-AS_IF([test "x$INSTALLDIRS" = x], [INSTALLDIRS="vendor"])
+# AC_ARG_VAR([INSTALLDIRS], [When installing Perl modules, specifies which
+#                            of the sets of installation directories
+#                            to choose: perl, site or vendor.
+#                            Default = "vendor"])
+# AS_IF([test "x$INSTALLDIRS" = x], [INSTALLDIRS="vendor"])
 
-AC_ARG_VAR([PERL_PREFIX], [Prefix for installing Perl modules.
-                           (Normal --prefix is ignored for Perl because
-                           Perl has different conventions.)
-                           Ignored, when INSTALLDIRS set to site or vendor.
-                           Default = "/usr/local/lib"])
-AS_IF([test "x$PERL_PREFIX" = x], [PERL_PREFIX="/usr/local"])
+# AC_ARG_VAR([PERL_PREFIX], [Prefix for installing Perl modules.
+#                            (Normal --prefix is ignored for Perl because
+#                            Perl has different conventions.)
+#                            Ignored, when INSTALLDIRS set to site or vendor.
+#                            Default = "/usr/local/lib"])
+# AS_IF([test "x$PERL_PREFIX" = x], [PERL_PREFIX="/usr/local"])
 
-AC_ARG_VAR([CABAL_CONFIGURE_FLAGS],
-           [Extra flags to pass to cabal: "cabal Setup.lhs configure $CABAL_CONFIGURE_FLAGS".
-            (Typically used to set --user or force --global.)])
+# AC_ARG_VAR([CABAL_CONFIGURE_FLAGS],
+#            [Extra flags to pass to cabal: "cabal Setup.lhs configure $CABAL_CONFIGURE_FLAGS".
+#             (Typically used to set --user or force --global.)])
 
-AC_SUBST(CABAL_CONFIGURE_FLAGS)
+# AC_SUBST(CABAL_CONFIGURE_FLAGS)
 
-AC_ARG_VAR([D_IMPORT_PREFIX], [Prefix for installing D modules.
-                           [INCLUDEDIR/d2]])
-AS_IF([test "x$D_IMPORT_PREFIX" = x], [D_IMPORT_PREFIX="${includedir}/d2"])
+# AC_ARG_VAR([D_IMPORT_PREFIX], [Prefix for installing D modules.
+#                            [INCLUDEDIR/d2]])
+# AS_IF([test "x$D_IMPORT_PREFIX" = x], [D_IMPORT_PREFIX="${includedir}/d2"])
 
-AC_ARG_VAR([DMD_LIBEVENT_FLAGS], [DMD flags for linking libevent (auto-detected if not set).])
-AC_ARG_VAR([DMD_OPENSSL_FLAGS], [DMD flags for linking OpenSSL (auto-detected if not set).])
+# AC_ARG_VAR([DMD_LIBEVENT_FLAGS], [DMD flags for linking libevent (auto-detected if not set).])
+# AC_ARG_VAR([DMD_OPENSSL_FLAGS], [DMD flags for linking OpenSSL (auto-detected if not set).])
 
 AC_PROG_CC
 AC_PROG_CPP
@@ -109,20 +110,21 @@ if test "$enable_libs" = "no"; then
   have_libs="no"
   with_cpp="no"
   with_c_glib="no"
-  with_java="no"
-  with_csharp="no"
-  with_python="no"
-  with_ruby="no"
-  with_haskell="no"
-  with_perl="no"
-  with_php="no"
-  with_php_extension="no"
-  with_erlang="no"
-  with_go="no"
-  with_d="no"
-  with_nodejs="no"
-  with_lua="no"
 fi
+
+with_java="no"
+with_csharp="no"
+with_python="no"
+with_ruby="no"
+with_haskell="no"
+with_perl="no"
+with_php="no"
+with_php_extension="no"
+with_erlang="no"
+with_go="no"
+with_d="no"
+with_nodejs="no"
+with_lua="no"
 
 
 AX_THRIFT_LIB(cpp, [C++], yes)
@@ -164,235 +166,235 @@ if test "$with_c_glib" = "yes"; then
 fi
 AM_CONDITIONAL(WITH_C_GLIB, [test "$have_glib2" = "yes" -a "$have_gobject2" = "yes"])
 
-AX_THRIFT_LIB(csharp, [C#], yes)
-if test "$with_csharp" = "yes";  then
-  PKG_CHECK_MODULES(MONO, mono >= 2.0.0, net_3_5=yes, net_3_5=no)
-  PKG_CHECK_MODULES(MONO, mono >= 1.2.4, have_mono=yes, have_mono=no)
-  if test "$have_mono" = "yes" ; then
-    have_csharp="yes"
-  fi
-fi
+# AX_THRIFT_LIB(csharp, [C#], no)
+# if test "$with_csharp" = "yes";  then
+#   PKG_CHECK_MODULES(MONO, mono >= 2.0.0, net_3_5=yes, net_3_5=no)
+#   PKG_CHECK_MODULES(MONO, mono >= 1.2.4, have_mono=yes, have_mono=no)
+#   if test "$have_mono" = "yes" ; then
+#     have_csharp="yes"
+#   fi
+# fi
 AM_CONDITIONAL(WITH_MONO, [test "$have_csharp" = "yes"])
 AM_CONDITIONAL(NET_2_0, [test "$net_3_5" = "no"])
 
-AX_THRIFT_LIB(java, [Java], yes)
-if test "$with_java" = "yes";  then
-  AX_JAVAC_AND_JAVA
-  AC_PATH_PROG([ANT], [ant])
-  AX_CHECK_ANT_VERSION($ANT, 1.7)
-  AC_SUBST(CLASSPATH)
-  AC_SUBST(ANT_FLAGS)
-  if test "x$JAVAC" != "x" && test "x$JAVAC" != "x" && test "x$ANT" != "x" ; then
-    have_java="yes"
-  fi
-fi
+# AX_THRIFT_LIB(java, [Java], no)
+# if test "$with_java" = "yes";  then
+#   AX_JAVAC_AND_JAVA
+#   AC_PATH_PROG([ANT], [ant])
+#   AX_CHECK_ANT_VERSION($ANT, 1.7)
+#   AC_SUBST(CLASSPATH)
+#   AC_SUBST(ANT_FLAGS)
+#   if test "x$JAVAC" != "x" && test "x$JAVAC" != "x" && test "x$ANT" != "x" ; then
+#     have_java="yes"
+#   fi
+# fi
 AM_CONDITIONAL([WITH_JAVA], [test "$have_java" = "yes"])
 
-AX_THRIFT_LIB(erlang, [Erlang], yes)
-if test "$with_erlang" = "yes";  then
-  AC_ERLANG_PATH_ERL
-  AC_ERLANG_PATH_ERLC
-  if test -n "$ERLC" ; then
-    AC_ERLANG_SUBST_LIB_DIR
-    # Install into the detected Erlang directory instead of $libdir/erlang/lib
-    ERLANG_INSTALL_LIB_DIR="$ERLANG_LIB_DIR"
-    AC_ERLANG_SUBST_INSTALL_LIB_SUBDIR(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
-  fi
-  if test -n "$ERL" -a -n "$ERLC" ; then
-    have_erlang="yes"
-  fi
-fi
+# AX_THRIFT_LIB(erlang, [Erlang], no)
+# if test "$with_erlang" = "yes";  then
+#   AC_ERLANG_PATH_ERL
+#   AC_ERLANG_PATH_ERLC
+#   if test -n "$ERLC" ; then
+#     AC_ERLANG_SUBST_LIB_DIR
+#     # Install into the detected Erlang directory instead of $libdir/erlang/lib
+#     ERLANG_INSTALL_LIB_DIR="$ERLANG_LIB_DIR"
+#     AC_ERLANG_SUBST_INSTALL_LIB_SUBDIR(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
+#   fi
+#   if test -n "$ERL" -a -n "$ERLC" ; then
+#     have_erlang="yes"
+#   fi
+# fi
 AM_CONDITIONAL(WITH_ERLANG, [test "$have_erlang" = "yes"])
 
-AX_THRIFT_LIB(nodejs, [Nodejs], yes)
-have_nodejs=no
-if test "$with_nodejs" = "yes"; then
-  AC_PATH_PROGS([NODEJS], [nodejs node])
-  AC_PATH_PROG([NPM], [npm])
-  if test "x$NODEJS" != "x" -a "x$NPM" != "x"; then
-    have_nodejs="yes"
-  fi
-fi
+# AX_THRIFT_LIB(nodejs, [Nodejs], no)
+# have_nodejs=no
+# if test "$with_nodejs" = "yes"; then
+#   AC_PATH_PROGS([NODEJS], [nodejs node])
+#   AC_PATH_PROG([NPM], [npm])
+#   if test "x$NODEJS" != "x" -a "x$NPM" != "x"; then
+#     have_nodejs="yes"
+#   fi
+# fi
 AM_CONDITIONAL(WITH_NODEJS, [test "$have_nodejs" = "yes"])
 AM_CONDITIONAL(HAVE_NPM, [test "x$NPM" != "x"])
 
-AX_THRIFT_LIB(lua, [Lua], yes)
-have_lua=no
-if test "$with_lua" = "yes"; then
-  AC_PATH_PROGS([LUA], [lua])
-  if test "x$LUA" != "x"; then
-    have_lua="yes"
-  fi
-fi
+# AX_THRIFT_LIB(lua, [Lua], no)
+# have_lua=no
+# if test "$with_lua" = "yes"; then
+#   AC_PATH_PROGS([LUA], [lua])
+#   if test "x$LUA" != "x"; then
+#     have_lua="yes"
+#   fi
+# fi
 AM_CONDITIONAL(WITH_LUA, [test "$have_lua" = "yes"])
 
-AX_THRIFT_LIB(python, [Python], yes)
-if test "$with_python" = "yes";  then
-  AM_PATH_PYTHON(2.4,, :)
-  if test "x$PYTHON" != "x" && test "x$PYTHON" != "x:" ; then
-    have_python="yes"
-  fi
-fi
+# AX_THRIFT_LIB(python, [Python], no)
+# if test "$with_python" = "yes";  then
+#   AM_PATH_PYTHON(2.4,, :)
+#   if test "x$PYTHON" != "x" && test "x$PYTHON" != "x:" ; then
+#     have_python="yes"
+#   fi
+# fi
 AM_CONDITIONAL(WITH_PYTHON, [test "$have_python" = "yes"])
 
-AC_PATH_PROG([TRIAL], [trial])
+# AC_PATH_PROG([TRIAL], [trial])
 
-AX_THRIFT_LIB(perl, [Perl], yes)
-if test "$with_perl" = "yes"; then
-  AC_PATH_PROG([PERL], [perl])
-  if test -n "$PERL" ; then
-    AC_PROG_PERL_MODULES([Bit::Vector], success="yes", success="no")
-    have_perl_bit_vector="$success"
-    AC_PROG_PERL_MODULES([Class::Accessor], success="yes", success="no")
-    have_perl_class_accessor="$success"
-  fi
-  if test -n "$PERL" -a "$have_perl_bit_vector" = "yes" ; then
-    if test -n "$PERL" -a "$have_perl_class_accessor" = "yes" ; then
-      have_perl="yes"
-    fi
-  fi
-fi
+# AX_THRIFT_LIB(perl, [Perl], no)
+# if test "$with_perl" = "yes"; then
+#   AC_PATH_PROG([PERL], [perl])
+#   if test -n "$PERL" ; then
+#     AC_PROG_PERL_MODULES([Bit::Vector], success="yes", success="no")
+#     have_perl_bit_vector="$success"
+#     AC_PROG_PERL_MODULES([Class::Accessor], success="yes", success="no")
+#     have_perl_class_accessor="$success"
+#   fi
+#   if test -n "$PERL" -a "$have_perl_bit_vector" = "yes" ; then
+#     if test -n "$PERL" -a "$have_perl_class_accessor" = "yes" ; then
+#       have_perl="yes"
+#     fi
+#   fi
+# fi
 AM_CONDITIONAL(WITH_PERL, [test "$have_perl" = "yes"])
 
-AX_THRIFT_LIB(php, [PHP], yes)
-if test "$with_php" = "yes"; then
-  AC_PATH_PROG([PHP], [php])
-  if test -n "$PHP" ; then
-    have_php="yes"
-  fi
-fi
+# AX_THRIFT_LIB(php, [PHP], no)
+# if test "$with_php" = "yes"; then
+#   AC_PATH_PROG([PHP], [php])
+#   if test -n "$PHP" ; then
+#     have_php="yes"
+#   fi
+# fi
 AM_CONDITIONAL(WITH_PHP, [test "$have_php" = "yes"])
 
-AX_THRIFT_LIB(php_extension, [PHP_EXTENSION], yes)
-if test "$with_php_extension" = "yes"; then
-  if test -f "lib/php/src/ext/thrift_protocol/configure"; then
-    AC_PATH_PROG([PHP_CONFIG], [php-config])
-    if test -n "$PHP_CONFIG" ; then
-      AC_CONFIG_SUBDIRS([lib/php/src/ext/thrift_protocol])
-      have_php_extension="yes"
-    fi
-  fi
-fi
+# AX_THRIFT_LIB(php_extension, [PHP_EXTENSION], no)
+# if test "$with_php_extension" = "yes"; then
+#   if test -f "lib/php/src/ext/thrift_protocol/configure"; then
+#     AC_PATH_PROG([PHP_CONFIG], [php-config])
+#     if test -n "$PHP_CONFIG" ; then
+#       AC_CONFIG_SUBDIRS([lib/php/src/ext/thrift_protocol])
+#       have_php_extension="yes"
+#     fi
+#   fi
+# fi
 AM_CONDITIONAL(WITH_PHP_EXTENSION, [test "$have_php_extension" = "yes"])
 
 AC_PATH_PROG([PHPUNIT], [phpunit])
 AM_CONDITIONAL(HAVE_PHPUNIT, [test "x$PHPUNIT" != "x"])
 
-AX_THRIFT_LIB(ruby, [Ruby], yes)
-have_ruby=no
-if test "$with_ruby" = "yes"; then
-  AC_PATH_PROG([RUBY], [ruby])
-  AC_PATH_PROG([BUNDLER], [bundle])
-  if test "x$RUBY" != "x" -a "x$BUNDLER" != "x"; then
-    have_ruby="yes"
-  fi
-fi
+# AX_THRIFT_LIB(ruby, [Ruby], no)
+# have_ruby=no
+# if test "$with_ruby" = "yes"; then
+#   AC_PATH_PROG([RUBY], [ruby])
+#   AC_PATH_PROG([BUNDLER], [bundle])
+#   if test "x$RUBY" != "x" -a "x$BUNDLER" != "x"; then
+#     have_ruby="yes"
+#   fi
+# fi
 AM_CONDITIONAL(WITH_RUBY, [test "$have_ruby" = "yes"])
 AM_CONDITIONAL(HAVE_BUNDLER, [test "x$BUNDLER" != "x"])
 
-AX_THRIFT_LIB(haskell, [Haskell], yes)
-have_haskell=no
-RUNHASKELL=true
-CABAL=true
-if test "$with_haskell" = "yes"; then
-  AC_PATH_PROG([CABAL], [cabal])
-  AC_PATH_PROG([RUNHASKELL], [runhaskell])
-  if test "x$CABAL" != "x" -a "x$RUNHASKELL" != "x"; then
-    have_haskell="yes"
-  else
-    RUNHASKELL=true
-    CABAL=true
-  fi
-fi
-AC_SUBST(CABAL)
-AC_SUBST(RUNHASKELL)
+# AX_THRIFT_LIB(haskell, [Haskell], no)
+# have_haskell=no
+# RUNHASKELL=true
+# CABAL=true
+# if test "$with_haskell" = "yes"; then
+#   AC_PATH_PROG([CABAL], [cabal])
+#   AC_PATH_PROG([RUNHASKELL], [runhaskell])
+#   if test "x$CABAL" != "x" -a "x$RUNHASKELL" != "x"; then
+#     have_haskell="yes"
+#   else
+#     RUNHASKELL=true
+#     CABAL=true
+#   fi
+# fi
+# AC_SUBST(CABAL)
+# AC_SUBST(RUNHASKELL)
 AM_CONDITIONAL(WITH_HASKELL, [test "$have_haskell" = "yes"])
 
-AX_THRIFT_LIB(go, [Go], yes)
-if test "$with_go" = "yes";  then
-  AC_PATH_PROG([GO], [go])
-  if [[ -x "$GO" ]] ; then
-    have_go="yes"
-  fi
-fi
+# AX_THRIFT_LIB(go, [Go], no)
+# if test "$with_go" = "yes";  then
+#   AC_PATH_PROG([GO], [go])
+#   if [[ -x "$GO" ]] ; then
+#     have_go="yes"
+#   fi
+# fi
 AM_CONDITIONAL(WITH_GO, [test "$have_go" = "yes"])
 
 
-AX_THRIFT_LIB(d, [D], yes)
-if test "$with_d" = "yes";  then
-  AX_DMD
-  AC_SUBST(DMD)
-  if test "x$DMD" != "x"; then
-    have_d="yes"
-  fi
-fi
+# AX_THRIFT_LIB(d, [D], no)
+# if test "$with_d" = "yes";  then
+#   AX_DMD
+#   AC_SUBST(DMD)
+#   if test "x$DMD" != "x"; then
+#     have_d="yes"
+#   fi
+# fi
 
 # Determine actual name of the generated D library for use in the command line
 # when compiling tests. This is needed because the -l<lib> syntax doesn't work
 # with OPTLINK (Windows).
-lib_prefix=lib
-lib_suffix=a
-case "$host_os" in
-  cygwin* | mingw* | pw32* | cegcc*)
-    lib_prefix=""
-    lib_suffix=lib
-    ;;
-esac
-D_LIB_NAME="${lib_prefix}thriftd.${lib_suffix}"
-AC_SUBST(D_LIB_NAME)
-D_EVENT_LIB_NAME="${lib_prefix}thriftd-event.${lib_suffix}"
-AC_SUBST(D_EVENT_LIB_NAME)
-D_SSL_LIB_NAME="${lib_prefix}thriftd-ssl.${lib_suffix}"
-AC_SUBST(D_SSL_LIB_NAME)
+# lib_prefix=lib
+# lib_suffix=a
+# case "$host_os" in
+#   cygwin* | mingw* | pw32* | cegcc*)
+#     lib_prefix=""
+#     lib_suffix=lib
+#     ;;
+# esac
+# D_LIB_NAME="${lib_prefix}thriftd.${lib_suffix}"
+# AC_SUBST(D_LIB_NAME)
+# D_EVENT_LIB_NAME="${lib_prefix}thriftd-event.${lib_suffix}"
+# AC_SUBST(D_EVENT_LIB_NAME)
+# D_SSL_LIB_NAME="${lib_prefix}thriftd-ssl.${lib_suffix}"
+# AC_SUBST(D_SSL_LIB_NAME)
 
-if test "$have_d" = "yes"; then
-  AX_CHECK_D_MODULE(deimos.event2.event)
-  have_deimos_event2=$success
+# if test "$have_d" = "yes"; then
+#   AX_CHECK_D_MODULE(deimos.event2.event)
+#   have_deimos_event2=$success
 
-  with_d_event_tests="no"
-  if test "$have_deimos_event2" = "yes"; then
-    if test "x$DMD_LIBEVENT_FLAGS" = "x"; then
-      if test "$dmd_optlink" = "yes"; then
-        AC_MSG_WARN([D libevent interface found, but cannot auto-detect \
-linker flags for OPTLINK. Please set DMD_LIBEVENT_FLAGS manually.])
-      else
-        AX_LIB_EVENT([2.0])
-        if test "$success" = "yes"; then
-          DMD_LIBEVENT_FLAGS=$(echo "$LIBEVENT_LDFLAGS $LIBEVENT_LIBS" | \
-            sed -e 's/^ *//g;s/ *$//g;s/^\(.\)/-L\1/g;s/  */ -L/g')
-          with_d_event_tests="yes"
-        else
-          AC_MSG_WARN([D libevent interface present, but libevent library not found.])
-        fi
-      fi
-    else
-      with_d_event_tests="yes"
-    fi
-  fi
+#   with_d_event_tests="no"
+#   if test "$have_deimos_event2" = "yes"; then
+#     if test "x$DMD_LIBEVENT_FLAGS" = "x"; then
+#       if test "$dmd_optlink" = "yes"; then
+#         AC_MSG_WARN([D libevent interface found, but cannot auto-detect \
+# linker flags for OPTLINK. Please set DMD_LIBEVENT_FLAGS manually.])
+#       else
+#         AX_LIB_EVENT([2.0])
+#         if test "$success" = "yes"; then
+#           DMD_LIBEVENT_FLAGS=$(echo "$LIBEVENT_LDFLAGS $LIBEVENT_LIBS" | \
+#             sed -e 's/^ *//g;s/ *$//g;s/^\(.\)/-L\1/g;s/  */ -L/g')
+#           with_d_event_tests="yes"
+#         else
+#           AC_MSG_WARN([D libevent interface present, but libevent library not found.])
+#         fi
+#       fi
+#     else
+#       with_d_event_tests="yes"
+#     fi
+#   fi
 
-  AX_CHECK_D_MODULE(deimos.openssl.ssl)
-  have_deimos_openssl=$success
+#   AX_CHECK_D_MODULE(deimos.openssl.ssl)
+#   have_deimos_openssl=$success
 
-  with_d_ssl_tests="no"
-  if test "$have_deimos_openssl" = "yes"; then
-    if test "x$DMD_OPENSSL_FLAGS" = "x"; then
-      if test "$dmd_optlink" = "yes"; then
-        AC_MSG_WARN([D OpenSSL interface found, but cannot auto-detect \
-linker flags for OPTLINK. Please set DMD_OPENSSL_FLAGS manually.])
-      else
-        AX_CHECK_OPENSSL([with_d_ssl_tests="yes"])
-        if test "$with_d_ssl_tests" = "yes"; then
-          DMD_OPENSSL_FLAGS=$(echo "$OPENSSL_LDFLAGS $OPENSSL_LIBS" | \
-            sed -e 's/^ *//g;s/ *$//g;s/^\(.\)/-L\1/g;s/  */ -L/g')
-        else
-          AC_MSG_WARN([D OpenSSL interface present, but OpenSSL library not found.])
-        fi
-      fi
-    else
-      with_d_ssl_tests="yes"
-    fi
-  fi
-fi
+#   with_d_ssl_tests="no"
+#   if test "$have_deimos_openssl" = "yes"; then
+#     if test "x$DMD_OPENSSL_FLAGS" = "x"; then
+#       if test "$dmd_optlink" = "yes"; then
+#         AC_MSG_WARN([D OpenSSL interface found, but cannot auto-detect \
+# linker flags for OPTLINK. Please set DMD_OPENSSL_FLAGS manually.])
+#       else
+#         AX_CHECK_OPENSSL([with_d_ssl_tests="yes"])
+#         if test "$with_d_ssl_tests" = "yes"; then
+#           DMD_OPENSSL_FLAGS=$(echo "$OPENSSL_LDFLAGS $OPENSSL_LIBS" | \
+#             sed -e 's/^ *//g;s/ *$//g;s/^\(.\)/-L\1/g;s/  */ -L/g')
+#         else
+#           AC_MSG_WARN([D OpenSSL interface present, but OpenSSL library not found.])
+#         fi
+#       fi
+#     else
+#       with_d_ssl_tests="yes"
+#     fi
+#   fi
+# fi
 
 AM_CONDITIONAL(WITH_D, [test "$have_d" = "yes"])
 AM_CONDITIONAL(DMD_OPTLINK, [test "$dmd_optlink" = "yes"])
@@ -635,48 +637,48 @@ AC_CONFIG_FILES([
   lib/c_glib/Makefile
   lib/c_glib/thrift_c_glib.pc
   lib/c_glib/test/Makefile
-  lib/csharp/Makefile
-  lib/d/Makefile
-  lib/d/test/Makefile
-  lib/erl/Makefile
-  lib/go/Makefile
-  lib/go/test/Makefile
-  lib/hs/Makefile
-  lib/java/Makefile
-  lib/js/test/Makefile
-  lib/nodejs/Makefile
-  lib/perl/Makefile
-  lib/perl/test/Makefile
-  lib/php/Makefile
-  lib/php/test/Makefile
-  lib/py/Makefile
-  lib/rb/Makefile
-  lib/lua/Makefile
   test/Makefile
   test/c_glib/Makefile
   test/cpp/Makefile
-  test/erl/Makefile
-  test/go/Makefile
-  test/hs/Makefile
-  test/php/Makefile
-  test/perl/Makefile
-  test/py/Makefile
-  test/py.twisted/Makefile
-  test/py.tornado/Makefile
-  test/rb/Makefile
   tutorial/Makefile
   tutorial/c_glib/Makefile
   tutorial/cpp/Makefile
-  tutorial/go/Makefile
-  tutorial/hs/Makefile
-  tutorial/java/Makefile
-  tutorial/js/Makefile
-  tutorial/nodejs/Makefile
-  tutorial/py/Makefile
-  tutorial/py.twisted/Makefile
-  tutorial/py.tornado/Makefile
-  tutorial/rb/Makefile
 ])
+# lib/csharp/Makefile
+# lib/d/Makefile
+# lib/d/test/Makefile
+# lib/erl/Makefile
+# lib/go/Makefile
+# lib/go/test/Makefile
+# lib/hs/Makefile
+# lib/java/Makefile
+# lib/js/test/Makefile
+# lib/nodejs/Makefile
+# lib/perl/Makefile
+# lib/perl/test/Makefile
+# lib/php/Makefile
+# lib/php/test/Makefile
+# lib/py/Makefile
+# lib/rb/Makefile
+# lib/lua/Makefile
+# test/erl/Makefile
+# test/go/Makefile
+# test/hs/Makefile
+# test/php/Makefile
+# test/perl/Makefile
+# test/py/Makefile
+# test/py.twisted/Makefile
+# test/py.tornado/Makefile
+# test/rb/Makefile
+# tutorial/go/Makefile
+# tutorial/hs/Makefile
+# tutorial/java/Makefile
+# tutorial/js/Makefile
+# tutorial/nodejs/Makefile
+# tutorial/py/Makefile
+# tutorial/py.twisted/Makefile
+# tutorial/py.tornado/Makefile
+# tutorial/rb/Makefile
 
 AC_OUTPUT
 
@@ -686,18 +688,18 @@ echo "$PACKAGE $VERSION"
 echo
 echo "Building C++ Library ......... : $have_cpp"
 echo "Building C (GLib) Library .... : $have_c_glib"
-echo "Building Java Library ........ : $have_java"
-echo "Building C# Library .......... : $have_csharp"
-echo "Building Python Library ...... : $have_python"
-echo "Building Ruby Library ........ : $have_ruby"
-echo "Building Haskell Library ..... : $have_haskell"
-echo "Building Perl Library ........ : $have_perl"
-echo "Building PHP Library ......... : $have_php"
-echo "Building Erlang Library ...... : $have_erlang"
-echo "Building Go Library .......... : $have_go"
-echo "Building D Library ........... : $have_d"
-echo "Building NodeJS Library ...... : $have_nodejs"
-echo "Building Lua Library ......... : $have_lua"
+# echo "Building Java Library ........ : $have_java"
+# echo "Building C# Library .......... : $have_csharp"
+# echo "Building Python Library ...... : $have_python"
+# echo "Building Ruby Library ........ : $have_ruby"
+# echo "Building Haskell Library ..... : $have_haskell"
+# echo "Building Perl Library ........ : $have_perl"
+# echo "Building PHP Library ......... : $have_php"
+# echo "Building Erlang Library ...... : $have_erlang"
+# echo "Building Go Library .......... : $have_go"
+# echo "Building D Library ........... : $have_d"
+# echo "Building NodeJS Library ...... : $have_nodejs"
+# echo "Building Lua Library ......... : $have_lua"
 
 if test "$have_cpp" = "yes" ; then
   echo
@@ -706,73 +708,73 @@ if test "$have_cpp" = "yes" ; then
   echo "   Build TNonblockingServer .. : $have_libevent"
   echo "   Build TQTcpServer (Qt) .... : $have_qt"
 fi
-if test "$have_java" = "yes" ; then
-  echo
-  echo "Java Library:"
-  echo "   Using javac ............... : $JAVAC"
-  echo "   Using java ................ : $JAVA"
-  echo "   Using ant ................. : $ANT"
-fi
-if test "$have_csharp" = "yes" ; then
-  echo
-  echo "C# Library:"
-  echo "   Using .NET 3.5 ............ : $net_3_5"
-fi
-if test "$have_python" = "yes" ; then
-  echo
-  echo "Python Library:"
-  echo "   Using Python .............. : $PYTHON"
-fi
-if test "$have_php" = "yes" ; then
-  echo
-  echo "PHP Library:"
-  echo "   Using php-config .......... : $PHP_CONFIG"
-fi
-if test "$have_ruby" = "yes" ; then
-  echo
-  echo "Ruby Library:"
-  echo "   Using Ruby ................ : $RUBY"
-fi
-if test "$have_haskell" = "yes" ; then
-  echo
-  echo "Haskell Library:"
-  echo "   Using Haskell ............. : $RUNHASKELL"
-  echo "   Using Cabal ............... : $CABAL"
-fi
-if test "$have_perl" = "yes" ; then
-  echo
-  echo "Perl Library:"
-  echo "   Using Perl ................ : $PERL"
-fi
-if test "$have_erlang" = "yes" ; then
-  echo
-  echo "Erlang Library:"
-  echo "   Using erlc ................ : $ERLC"
-fi
-if test "$have_go" = "yes" ; then
-  echo
-  echo "Go Library:"
-  echo "   Using Go................... : $GO"
-  echo "   Using Go version........... : $($GO version)"
-fi
-if test "$have_d" = "yes" ; then
-  echo
-  echo "D Library:"
-  echo "   Using D Compiler .......... : $DMD"
-  echo "   Building D libevent tests . : $with_d_event_tests"
-  echo "   Building D SSL tests ...... : $with_d_ssl_tests"
-fi
-if test "$have_nodejs" = "yes" ; then
-  echo
-  echo "NodeJS Library:"
-  echo "   Using NodeJS .............. : $NODEJS"
-  echo "   Using NodeJS version....... : $($NODEJS --version)"
-fi
-if test "$have_lua" = "yes" ; then
-  echo
-  echo "Lua Library:"
-  echo "   Using Lua .............. : $LUA"
-fi
+# if test "$have_java" = "yes" ; then
+#   echo
+#   echo "Java Library:"
+#   echo "   Using javac ............... : $JAVAC"
+#   echo "   Using java ................ : $JAVA"
+#   echo "   Using ant ................. : $ANT"
+# fi
+# if test "$have_csharp" = "yes" ; then
+#   echo
+#   echo "C# Library:"
+#   echo "   Using .NET 3.5 ............ : $net_3_5"
+# fi
+# if test "$have_python" = "yes" ; then
+#   echo
+#   echo "Python Library:"
+#   echo "   Using Python .............. : $PYTHON"
+# fi
+# if test "$have_php" = "yes" ; then
+#   echo
+#   echo "PHP Library:"
+#   echo "   Using php-config .......... : $PHP_CONFIG"
+# fi
+# if test "$have_ruby" = "yes" ; then
+#   echo
+#   echo "Ruby Library:"
+#   echo "   Using Ruby ................ : $RUBY"
+# fi
+# if test "$have_haskell" = "yes" ; then
+#   echo
+#   echo "Haskell Library:"
+#   echo "   Using Haskell ............. : $RUNHASKELL"
+#   echo "   Using Cabal ............... : $CABAL"
+# fi
+# if test "$have_perl" = "yes" ; then
+#   echo
+#   echo "Perl Library:"
+#   echo "   Using Perl ................ : $PERL"
+# fi
+# if test "$have_erlang" = "yes" ; then
+#   echo
+#   echo "Erlang Library:"
+#   echo "   Using erlc ................ : $ERLC"
+# fi
+# if test "$have_go" = "yes" ; then
+#   echo
+#   echo "Go Library:"
+#   echo "   Using Go................... : $GO"
+#   echo "   Using Go version........... : $($GO version)"
+# fi
+# if test "$have_d" = "yes" ; then
+#   echo
+#   echo "D Library:"
+#   echo "   Using D Compiler .......... : $DMD"
+#   echo "   Building D libevent tests . : $with_d_event_tests"
+#   echo "   Building D SSL tests ...... : $with_d_ssl_tests"
+# fi
+# if test "$have_nodejs" = "yes" ; then
+#   echo
+#   echo "NodeJS Library:"
+#   echo "   Using NodeJS .............. : $NODEJS"
+#   echo "   Using NodeJS version....... : $($NODEJS --version)"
+# fi
+# if test "$have_lua" = "yes" ; then
+#   echo
+#   echo "Lua Library:"
+#   echo "   Using Lua .............. : $LUA"
+# fi
 echo
 echo "If something is missing that you think should be present,"
 echo "please skim the output of configure to find the missing"

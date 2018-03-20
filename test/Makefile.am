@@ -17,6 +17,8 @@
 # under the License.
 #
 
+AUTOMAKE_OPTIONS = subdir-objects
+
 SUBDIRS =
 
 if WITH_C_GLIB
@@ -27,35 +29,35 @@ if WITH_CPP
 SUBDIRS += cpp
 endif
 
-if WITH_PERL
-SUBDIRS += perl
-endif
+# if WITH_PERL
+# SUBDIRS += perl
+# endif
 
-if WITH_PHP
-SUBDIRS += php
-endif
+# if WITH_PHP
+# SUBDIRS += php
+# endif
 
-if WITH_PYTHON
-SUBDIRS += py
-SUBDIRS += py.twisted
-SUBDIRS += py.tornado
-endif
+# if WITH_PYTHON
+# SUBDIRS += py
+# SUBDIRS += py.twisted
+# SUBDIRS += py.tornado
+# endif
 
-if WITH_RUBY
-SUBDIRS += rb
-endif
+# if WITH_RUBY
+# SUBDIRS += rb
+# endif
 
-if WITH_HASKELL
-SUBDIRS += hs
-endif
+# if WITH_HASKELL
+# SUBDIRS += hs
+# endif
 
-if WITH_GO
-SUBDIRS += go
-endif
+# if WITH_GO
+# SUBDIRS += go
+# endif
 
-if WITH_ERLANG
-SUBDIRS += erl
-endif
+# if WITH_ERLANG
+# SUBDIRS += erl
+# endif
 
 #
 # generate html for ThriftTest.thrift
@@ -70,16 +72,6 @@ EXTRA_DIST = \
 	tests.json \
 	c_glib \
 	cpp \
-	erl \
-	hs \
-	lua \
-	ocaml \
-	perl \
-	php \
-	py \
-	py.twisted \
-	py.tornado \
-	rb \
 	threads \
 	AnnotationTest.thrift \
 	BrokenConstants.thrift \
@@ -103,3 +95,14 @@ EXTRA_DIST = \
 	FastbinaryTest.py \
 	result.html \
 	README.md
+
+# erl 
+# hs 
+# lua 
+# ocaml 
+# perl 
+# php 
+# py 
+# py.twisted 
+# py.tornado 
+# rb 

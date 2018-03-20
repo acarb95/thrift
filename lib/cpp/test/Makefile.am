@@ -273,7 +273,7 @@ AM_LDFLAGS = $(BOOST_LDFLAGS)
 AM_CXXFLAGS = -Wall -Wextra -pedantic
 
 clean-local:
-	$(RM) -r gen-cpp
+	$(RM) gen-cpp/*
 
 EXTRA_DIST = \
 	DenseProtoTest.cpp \

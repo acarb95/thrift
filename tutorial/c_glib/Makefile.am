@@ -64,7 +64,7 @@ $(nodist_libtutorialgencglib_la_SOURCES): $(top_srcdir)/tutorial/tutorial.thrift
 	$(THRIFT) --gen c_glib -r $<
 
 clean-local:
-	$(RM) -r gen-c_glib
+	$(RM) gen-c_glib/*
 
 tutorialserver: all
 	./tutorial_server
