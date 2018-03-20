@@ -51,49 +51,47 @@ G_DEFINE_TYPE(ThriftServerUDPSocket, thrift_server_udp_socket, THRIFT_TYPE_SERVE
 gboolean
 thrift_server_udp_socket_listen (ThriftServerTransport *transport, GError **error)
 {
-  int enabled = 1; /* for setsockopt() */
+  int enabled = 1; // for setsockopt()
 #if defined(USE_IPV6)
   struct sockaddr_in6 pin;
+  sa_family_t fam = AF_INET6;
 #else
   struct sockaddr_in pin;
+  sa_family_t fam = AF_INET;
 #endif
   ThriftServerUDPSocket *tsocket = THRIFT_SERVER_UDP_SOCKET (transport);
 
-  /* create a address structure */
+  // Create a address structure 
   memset (&pin, 0, sizeof(pin));
 #if defined(USE_IPV6)
-  pin.sin6_family = AF_INET6;
+  pin.sin6_family = fam;
   pin.sin6_addr = in6addr_any;
   pin.sin6_port = htons(tsocket->port);
-  // create a socket
-  // UDP CHANGE: switch from SOCK_STREAM to SOCK_DGRAM
-  if ((tsocket->sd = socket (AF_INET6, SOCK_DGRAM, 0)) == -1)
 #else
-  pin.sin_family = AF_INET;
+  pin.sin_family = fam;
   pin.sin_addr.s_addr = INADDR_ANY;
   pin.sin_port = htons(tsocket->port);
-  // create a socket 
-  // TODO: switch from SOCK_STREAM to SOCK_DGRAM 
-  if ((tsocket->sd = socket (AF_INET, SOCK_DGRAM, 0)) == -1)
 #endif
-  {
+
+  // Create a socket
+  if ((tsocket->sd = socket (fam, SOCK_DGRAM, 0)) == -1) {
     g_set_error (error, THRIFT_SERVER_UDP_SOCKET_ERROR,
                  THRIFT_SERVER_UDP_SOCKET_ERROR_SOCKET,
                  "failed to create socket - %s", strerror (errno));
     return FALSE;
   }
+
+  // Set the address to reusable so you don't have to wait after restarting
   if (setsockopt(tsocket->sd, SOL_SOCKET, SO_REUSEADDR, &enabled,
-                 sizeof(enabled)) == -1)
-  {
+                 sizeof(enabled)) == -1) {
     g_set_error (error, THRIFT_SERVER_UDP_SOCKET_ERROR,
                  THRIFT_SERVER_UDP_SOCKET_ERROR_SETSOCKOPT,
                  "unable to set SO_REUSEADDR - %s", strerror(errno));
     return FALSE;
   }
 
-  /* bind to the socket */
-  if (bind(tsocket->sd, (struct sockaddr *) &pin, sizeof(pin)) == -1)
-  {
+  // Bind to the socket
+  if (bind(tsocket->sd, (struct sockaddr *) &pin, sizeof(pin)) == -1) {
     g_set_error (error, THRIFT_SERVER_UDP_SOCKET_ERROR,
                  THRIFT_SERVER_UDP_SOCKET_ERROR_BIND,
                  "failed to bind to port %d - %s",
@@ -101,30 +99,15 @@ thrift_server_udp_socket_listen (ThriftServerTransport *transport, GError **erro
     return FALSE;
   }
 
-  // UDP CHANGE: cannot do with UDP, comment out
-/*
-  if (listen(tsocket->sd, tsocket->backlog) == -1)
-  {
-    g_set_error (error, THRIFT_SERVER_UDP_SOCKET_ERROR,
-                 THRIFT_SERVER_UDP_SOCKET_ERROR_LISTEN,
-                 "failed to listen to port %d - %s",
-                 tsocket->port, strerror(errno));
-    return FALSE;
-  }
-*/
   return TRUE;
 }
 
-// TODO: cannot do with UDP. Need to write special version that performs
-// the same actions but with UDP. 
 ThriftTransport *
 thrift_server_udp_socket_accept (ThriftServerTransport *transport, GError **error)
 {
-  // int sd = THRIFT_INVALID_SOCKET;
   int r;
   guint8 buf;
   guint8 resp;
-  // Port is the same in IPv6 vs IPv4, we need addr in string form (conversion done in open)
   uint16_t port;
 #if defined(USE_IPV6)
   struct sockaddr_in6 address;
@@ -135,15 +118,12 @@ thrift_server_udp_socket_accept (ThriftServerTransport *transport, GError **erro
   char addr[INET_ADDRSTRLEN];
   sa_family_t fam = AF_INET;
 #endif
-  socklen_t size = sizeof(address);
   socklen_t addrlen = sizeof(address);
   ThriftUDPSocket *socket = NULL;
 
   ThriftServerUDPSocket *tsocket = THRIFT_SERVER_UDP_SOCKET (transport);
 
-  // g_message("Waiting for setup message.");
-  // UDP_CHANGE: switch from accept to recvfrom. When we get a request, we spawn a new
-  // socket to handle that request. 
+  // When we get a request, we spawn a new socket to handle that request. 
   // Peek to see the data and where it is from, when the socket is returned, the server
   // should read the message and address it. 
   r = recvfrom(tsocket->sd, &buf, 1, 0, (struct sockaddr *) &address, &addrlen);
@@ -156,6 +136,7 @@ thrift_server_udp_socket_accept (ThriftServerTransport *transport, GError **erro
     return FALSE;
   }
 
+  // Convert both the address and port to host format (that's how open gets them)
 #if defined(USE_IPV6)
   port = ntohs(address.sin6_port);
   inet_ntop(fam, &(address.sin6_addr), addr, INET6_ADDRSTRLEN);
@@ -164,18 +145,18 @@ thrift_server_udp_socket_accept (ThriftServerTransport *transport, GError **erro
   inet_ntop(fam, &(address.sin_addr), addr, INET_ADDRSTRLEN);
 #endif
 
-  // g_message("Creating a new socket with addr: %s and port %u", addr, port);
+  // Create new socket object to communicate with the client
   socket = g_object_new (THRIFT_TYPE_UDP_SOCKET, "hostname", addr, "port", port, "server", TRUE, NULL);
 
+  // Open new socket
   if (!THRIFT_TRANSPORT_GET_CLASS(THRIFT_TRANSPORT(socket))->open(THRIFT_TRANSPORT(socket), error)) {
     g_message("thrift_server_udp_socket_accept: could not open socket");
     g_message("error: %s", (*error)->message);
     return FALSE;
   }
 
-  // g_message("Sending response to port %hu", ntohs(socket->conn_sock->sin6_port));
   resp = 5;
-  // UDP_CHANGE: send back a response so it can send to the correct port
+  // Send a response back to the client (giving them the new socket info)
   if (!THRIFT_TRANSPORT_GET_CLASS(THRIFT_TRANSPORT(socket))->write(THRIFT_TRANSPORT(socket), (const gpointer) &resp, 1, error)) {
     g_message("thrift_server_udp_socket_accept: could not send response");
     g_message("error: %s", (*error)->message);

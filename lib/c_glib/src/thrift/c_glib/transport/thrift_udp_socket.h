@@ -62,9 +62,8 @@ struct _ThriftUDPSocket
   gshort port;                    // The port this socket was initialized to connect to (TCP legacy)
   gboolean server;                // Determines if this socket was created by a client or server
   int sd;                         // The socket descriptor
-  GByteArray *buf;                // Used to store the UDP datagram for reading
-  guint32 buf_size;               // Must be larger than the largest possible datagram
-  // guint32 buf_len;                // The occupied length of the buffer
+  guint8 *buf;                    // Unused
+  guint32 buf_size;               // Unused
 };
 
 typedef struct _ThriftUDPSocketClass ThriftUDPSocketClass;
