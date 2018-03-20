@@ -71,7 +71,7 @@ thrift_udp_socket_peek (ThriftTransport *transport, GError **error)
 
   if (thrift_udp_socket_is_open (transport))
   {
-    // UDP_CHANGE: switched from recv to recvfrom (recv is normally for connections)
+    // Attempt to recvfrom the socket (this will block until data exists)
     r = recvfrom (socket->sd, &buf, 1, MSG_PEEK, (struct sockaddr *) &src_addr, &srcaddrlen);
     if (r == -1)
     {
@@ -111,41 +111,32 @@ thrift_udp_socket_peek (ThriftTransport *transport, GError **error)
 gboolean
 thrift_udp_socket_open (ThriftTransport *transport, GError **error)
 {
-  uint16_t sock_port;
 #if defined(USE_IPV6)
   struct sockaddr_in6 pin;
-  struct sockaddr_in6 sin;
-  char sock_ip[INET6_ADDRSTRLEN];
   sa_family_t fam = AF_INET6;
 #else
   struct sockaddr_in pin;
-  struct sockaddr_in sin;
-  char sock_ip[INET_ADDRSTRLEN];
   sa_family_t fam = AF_INET;
 #endif
   struct sockaddr_storage result;
   struct addrinfo* res = NULL;
   struct addrinfo hints;
-  socklen_t len = sizeof(sin);
 
   ThriftUDPSocket *tsocket = THRIFT_UDP_SOCKET (transport);
+
   g_return_val_if_fail (tsocket->sd == THRIFT_INVALID_SOCKET, FALSE);
 
-  // g_message("Getting hostname and port from %s:%hu", tsocket->hostname, tsocket->port);
   memset (&pin, 0, sizeof(pin));
   memset(&hints, 0, sizeof(struct addrinfo));
   
   hints.ai_family = fam;
-  // UDP_CHANGE: switched to SOCK_DGRAM from SOCK_STREAM
   hints.ai_socktype = SOCK_DGRAM;
 
-  // g_message("Getting address info");
   getaddrinfo(tsocket->hostname, NULL, &hints, &res);
 
-  // g_message("Copying address");
   memcpy(&result, res->ai_addr, res->ai_addrlen);
 
-  /* create a socket structure */
+  // create a socket structure
 #if defined(USE_IPV6)
   pin.sin6_addr = ((struct sockaddr_in6*) &result)->sin6_addr;
   pin.sin6_family = fam;
@@ -155,12 +146,10 @@ thrift_udp_socket_open (ThriftTransport *transport, GError **error)
   pin.sin_family = fam;
   pin.sin_port = htons(tsocket->port);
 #endif
-  // g_message("Creating socket...");
+
   // create the socket
-  // UDP_CHANGE: switched to SOCK_DGRAM from SOCK_STREAM
   if ((tsocket->sd = socket (fam, SOCK_DGRAM, 0)) == -1)
   {
-    // g_message("socket failed...");
     g_set_error (error, THRIFT_TRANSPORT_ERROR, THRIFT_TRANSPORT_ERROR_SOCKET,
                  "failed to create socket for host %s:%d - %s",
                  tsocket->hostname, tsocket->port,
@@ -168,40 +157,25 @@ thrift_udp_socket_open (ThriftTransport *transport, GError **error)
     return FALSE;
   }
 
-  getsockname(tsocket->sd, (struct sockaddr*) &sin, &len); 
-
-#if defined(USE_IPV6)
-  sock_port = ntohs(sin.sin6_port);
-  inet_ntop(fam, &(sin.sin6_addr), sock_ip, INET6_ADDRSTRLEN);
-#else
-  sock_port = ntohs(sin.sin_port);
-  inet_ntop(fam, &(sin.sin_addr), sock_ip, INET_ADDRSTRLEN);
-#endif
-
-  // g_message("Socket listening on ip: %s port: %u", sock_ip, sock_port);
-
-  // If I am a client socket, then I need to send a connection message
   if (!tsocket->server) {
+    // Client socket initiates a handshake message
     gint32 val = 3;
 
-    // g_message("Sending setup message to %s:%u", tsocket->hostname, tsocket->port);
+    // Set the destination info to the server
     memcpy(tsocket->conn_sock, &pin, sizeof(pin));
     tsocket->conn_size = sizeof(pin);
-    // UDP_CHANGE: send dummy message to server (like a handshake)
+    // Send dummy message to server (start handshake)
     THRIFT_TRANSPORT_GET_CLASS(transport)->write(transport, (const gpointer) &val, 1, error);
 
-    memset(tsocket->conn_sock, 0, tsocket->conn_size); // unset it
+    // Reset the destination info (so we can load the new server socket info)
+    memset(tsocket->conn_sock, 0, tsocket->conn_size);
 
-    // g_message("Waiting for response.");
+    // Waiting for response from the new server socket
     THRIFT_TRANSPORT_GET_CLASS(transport)->read(transport, (const gpointer) &val, 1, error);
   } else {
+    // Server socket, set the client info as destination socket
     memcpy(tsocket->conn_sock, &pin, sizeof(pin));
     tsocket->conn_size = sizeof(pin);
-// #if defined(USE_IPV6)
-//     g_message("Server socket sending port %hu", ntohs(tsocket->conn_sock->sin6_port));
-// #else
-//     g_message("Server socket sending port %hu", ntohs(tsocket->conn_sock->sin_port));
-// #endif
   }
 
   return TRUE;
@@ -242,7 +216,8 @@ thrift_udp_socket_read (ThriftTransport *transport, gpointer buf,
 
   ThriftUDPSocket *socket = THRIFT_UDP_SOCKET (transport);
 
-  guchar buffer[socket->buf_size]; // Largest message we can hold
+  // Create the message structure
+  guchar buffer[len]; // buffer should only hold as much as the r_buf_size in transport
 
   struct iovec iov[1];
   iov[0].iov_base = buffer;
@@ -256,33 +231,27 @@ thrift_udp_socket_read (ThriftTransport *transport, gpointer buf,
   message.msg_control = 0;
   message.msg_controllen = 0;
 
-  // TODO: change to read the entire message, append it to the buffer. 
-  // while (got < len)
-  // {
-    // UDP_CHANGE: switched from recv to recvmsg
-    // g_message("thrift_udp_socket_read: calling recvfrom with len %u", len);
-    // ret = recvfrom (socket->sd, buf+got, len-got, 0, (struct sockaddr *) &src_addr, &srcaddrlen);
-    ret = recvmsg (socket->sd, &message, 0);
-    // g_message("thrift_udp_socket_read: read %d", ret);
-    if (ret <= 0)
-    {
-      g_set_error (error, THRIFT_TRANSPORT_ERROR,
-                   THRIFT_TRANSPORT_ERROR_RECEIVE,
-                   "failed to read %d bytes - %s", len, strerror(errno));
-      return -1;
-    }
-    got += ret;
-  // }
-  // socket->buf = g_byte_array_append (socket->buf, buffer, got);
-  memcpy(buf, buffer, (got > len) ? got : len); // TODO: risk of buffer overflow if got > buf size
+  // Receive the entire message from the socket
+  ret = recvmsg (socket->sd, &message, 0);
+  if (ret <= 0)
+  {
+    g_set_error (error, THRIFT_TRANSPORT_ERROR,
+                 THRIFT_TRANSPORT_ERROR_RECEIVE,
+                 "failed to read %d bytes - %s", len, strerror(errno));
+    return -1;
+  }
+  got = ret;
+  // TODO: got should always be less than len --> assert that? otherwise we will overflow
+  // Copy the message into the buffer (which will be copied into the transport read buffer)
+  memcpy(buf, buffer, (got < len) ? got : len);
 
-  // UDP_CHANGE: check to see what address sent the message, if conn_sock isn't set, set it.
+  // If our destination socket is not set, we should set it to whatever socket sent this info
   if (((struct sockaddr*) socket->conn_sock)->sa_family == 0) {
-    // g_message("thrift_udp_socket_read: Setting connection socket with new address.");
     memcpy(socket->conn_sock, &src_addr, addrlen);
     socket->conn_size = addrlen;
   }
 
+  // Return the TOTAL message size
   return got;
 }
 
@@ -307,6 +276,8 @@ thrift_udp_socket_write (ThriftTransport *transport, const gpointer buf,
 
   ThriftUDPSocket *socket = THRIFT_UDP_SOCKET (transport);
   g_return_val_if_fail (socket->sd != THRIFT_INVALID_SOCKET, FALSE);
+
+  // If the sa_family is 0 that means the destination socket is never set
   if (((struct sockaddr*) socket->conn_sock)->sa_family == 0) {
     g_set_error (error, THRIFT_TRANSPORT_ERROR, THRIFT_TRANSPORT_ERROR_SEND,
                  "conn_sock is null");
@@ -314,10 +285,7 @@ thrift_udp_socket_write (ThriftTransport *transport, const gpointer buf,
 
   while (sent < len)
   {
-    // UDP_CHANGE: should just work for UDP assuming we call connect.
-    // We are assuming that UDP connect is sent to the correct server
-    // address to begin with.
-    // g_message("thrift_udp_socket_write: calling sendto with total len of %u", len);
+    // Send to the destination sock (an object variable of the socket)
     ret = sendto (socket->sd, buf + sent, len - sent, 0, (struct sockaddr *) socket->conn_sock, socket->conn_size);
     if (ret < 0)
     {
@@ -330,7 +298,6 @@ thrift_udp_socket_write (ThriftTransport *transport, const gpointer buf,
     sent += ret;
   }
 
-  // g_message("Returning true.");
   return TRUE;
 }
 
@@ -368,9 +335,6 @@ thrift_udp_socket_init (ThriftUDPSocket *socket)
   socket->conn_sock = (struct sockaddr_in*)malloc(sizeof(struct sockaddr_in));
   socket->conn_size = sizeof(struct sockaddr_in);
 #endif
-  // TODO: initialize the buffer
-  socket->buf = g_byte_array_new();
-  socket->buf_size = 512;
 }
 
 /* destructor */
@@ -396,12 +360,6 @@ thrift_udp_socket_finalize (GObject *object)
   }
   socket->conn_size = 0;
   socket->conn_sock = NULL;
-
-  if (socket->buf != NULL) {
-    g_byte_array_free(socket->buf, TRUE);
-  }
-  socket->buf = NULL;
-  socket->buf_size = 0;
 }
 
 // TODO: add buf size as a param
