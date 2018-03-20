@@ -21,6 +21,7 @@
 *.swp
 *.hi
 *~
+cscope.out
 
 .*project
 junit*.properties

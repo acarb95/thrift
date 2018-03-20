@@ -17,6 +17,7 @@
  * under the License.
  */
 
+#include <assert.h>
 #include <netdb.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -25,79 +26,80 @@
 
 #include <thrift/c_glib/thrift.h>
 #include <thrift/c_glib/transport/thrift_transport.h>
-#include <thrift/c_glib/transport/thrift_buffered_transport.h>
+#include <thrift/c_glib/transport/thrift_buffered_udp_transport.h>
 
 /* object properties */
-enum _ThriftBufferedTransportProperties
+enum _ThriftBufferedUDPTransportProperties
 {
   PROP_0,
-  PROP_THRIFT_BUFFERED_TRANSPORT_TRANSPORT,
-  PROP_THRIFT_BUFFERED_TRANSPORT_READ_BUFFER_SIZE,
-  PROP_THRIFT_BUFFERED_TRANSPORT_WRITE_BUFFER_SIZE
+  PROP_THRIFT_BUFFERED_UDP_TRANSPORT_TRANSPORT,
+  PROP_THRIFT_BUFFERED_UDP_TRANSPORT_READ_BUFFER_SIZE,
+  PROP_THRIFT_BUFFERED_UDP_TRANSPORT_WRITE_BUFFER_SIZE
 };
 
-G_DEFINE_TYPE(ThriftBufferedTransport, thrift_buffered_transport, THRIFT_TYPE_TRANSPORT)
+G_DEFINE_TYPE(ThriftBufferedUDPTransport, thrift_buffered_udp_transport, THRIFT_TYPE_TRANSPORT)
 
 /* implements thrift_transport_is_open */
 gboolean
-thrift_buffered_transport_is_open (ThriftTransport *transport)
+thrift_buffered_udp_transport_is_open (ThriftTransport *transport)
 {
-  ThriftBufferedTransport *t = THRIFT_BUFFERED_TRANSPORT (transport);
+  ThriftBufferedUDPTransport *t = THRIFT_BUFFERED_UDP_TRANSPORT (transport);
   return THRIFT_TRANSPORT_GET_CLASS (t->transport)->is_open (t->transport);
 }
 
 /* overrides thrift_transport_peek */
 gboolean
-thrift_buffered_transport_peek (ThriftTransport *transport, GError **error)
+thrift_buffered_udp_transport_peek (ThriftTransport *transport, GError **error)
 {
-  ThriftBufferedTransport *t = THRIFT_BUFFERED_TRANSPORT (transport);
+  ThriftBufferedUDPTransport *t = THRIFT_BUFFERED_UDP_TRANSPORT (transport);
   return (t->r_buf->len > 0) || thrift_transport_peek (t->transport, error);
 }
 
 /* implements thrift_transport_open */
 gboolean
-thrift_buffered_transport_open (ThriftTransport *transport, GError **error)
+thrift_buffered_udp_transport_open (ThriftTransport *transport, GError **error)
 {
-  ThriftBufferedTransport *t = THRIFT_BUFFERED_TRANSPORT (transport);
+  ThriftBufferedUDPTransport *t = THRIFT_BUFFERED_UDP_TRANSPORT (transport);
   return THRIFT_TRANSPORT_GET_CLASS (t->transport)->open (t->transport, error);
 }
 
 /* implements thrift_transport_close */
 gboolean
-thrift_buffered_transport_close (ThriftTransport *transport, GError **error)
+thrift_buffered_udp_transport_close (ThriftTransport *transport, GError **error)
 {
-  ThriftBufferedTransport *t = THRIFT_BUFFERED_TRANSPORT (transport);
+  ThriftBufferedUDPTransport *t = THRIFT_BUFFERED_UDP_TRANSPORT (transport);
   return THRIFT_TRANSPORT_GET_CLASS (t->transport)->close (t->transport, error);
 }
 
 /* the actual read is "slow" because it calls the underlying transport */
 gint32
-thrift_buffered_transport_read_slow (ThriftTransport *transport, gpointer buf,
+thrift_buffered_udp_transport_read_slow (ThriftTransport *transport, gpointer buf,
                                      guint32 len, GError **error)
 {
-  ThriftBufferedTransport *t = THRIFT_BUFFERED_TRANSPORT (transport);
+  ThriftBufferedUDPTransport *t = THRIFT_BUFFERED_UDP_TRANSPORT (transport);
   gint ret = 0;
   guint32 want = len;
   guint32 got = 0;
-  guchar *tmpdata = g_alloca (len);
+  guchar tmpdata[t->r_buf_size]; // Make the buffer the max we can read (set when creating transport)
   guint32 have = t->r_buf->len;
 
-  /* we shouldn't hit this unless the buffer doesn't have enough to read */
-  g_assert (t->r_buf->len < want);
+  // We shouldn't hit this unless the buffer doesn't have enough to read
+  assert (t->r_buf->len < want);
 
-  /* first copy what we have in our buffer. */
   if (have > 0)
   {
+    // First copy what we have in our buffer.
     memcpy (buf, t->r_buf, t->r_buf->len);
+    // Subtract the amount we just added from the buffer
     want -= t->r_buf->len;
+    // Remove the data we just added from the buffer
     t->r_buf = g_byte_array_remove_range (t->r_buf, 0, t->r_buf->len);
   }
 
-  /* if the buffer is still smaller than what we want to read, then just
-   * read it directly.  otherwise, fill the buffer and then give out
-   * enough to satisfy the read. */
-  if (t->r_buf_size < want)
-  {
+  // If the buffer is still smaller than what we want to read, then just
+  // read it directly. Otherwise, fill the buffer and then give out
+  // enough to satisfy the read.
+  if (t->r_buf_size < want) {
     if ((ret = THRIFT_TRANSPORT_GET_CLASS (t->transport)->read (t->transport,
                                                                 tmpdata,
                                                                 want,
@@ -106,56 +108,58 @@ thrift_buffered_transport_read_slow (ThriftTransport *transport, gpointer buf,
     }
     got += ret;
 
-    /* copy the data starting from where we left off */
-    memcpy ((guint8 *)buf + have, tmpdata, got);
+    // Copy the data starting from where we left off
+    memcpy (buf + have, tmpdata, got);
+    // Return what we had and everything we read
     return got + have; 
   } else {
-    guint32 give;
-
+    // Buffer is big enough to read everything we want
     if ((ret = THRIFT_TRANSPORT_GET_CLASS (t->transport)->read (t->transport,
                                                                 tmpdata,
-                                                                want,
+                                                                t->r_buf_size,
                                                                 error)) < 0) {
       return ret;
     }
     got += ret;
+
+    // Add what we just read to the read buffer
     t->r_buf = g_byte_array_append (t->r_buf, tmpdata, got);
     
-    /* hand over what we have up to what the caller wants */
-    give = want < t->r_buf->len ? want : t->r_buf->len;
+    // Hand over what we have up to what the caller wants
+    guint32 give = want < t->r_buf->len ? want : t->r_buf->len;
+    memcpy (buf + len - want, t->r_buf->data, give);
 
-
-    memcpy ((guint8 *)buf + len - want, t->r_buf->data, give);
+    // Remove what we hand over from the buffer
     t->r_buf = g_byte_array_remove_range (t->r_buf, 0, give);
     want -= give;
 
+    // Return the amount the user requested
     return (len - want);
   }
 }
 
 /* implements thrift_transport_read */
 gint32
-thrift_buffered_transport_read (ThriftTransport *transport, gpointer buf,
+thrift_buffered_udp_transport_read (ThriftTransport *transport, gpointer buf,
                                 guint32 len, GError **error)
 {
-  ThriftBufferedTransport *t = THRIFT_BUFFERED_TRANSPORT (transport);
+  ThriftBufferedUDPTransport *t = THRIFT_BUFFERED_UDP_TRANSPORT (transport);
 
-  /* if we have enough buffer data to fulfill the read, just use
-   * a memcpy */
+  // If we have enough buffer data to fulfill the read, just use a memcpy
   if (len <= t->r_buf->len)
   {
     memcpy (buf, t->r_buf->data, len);
     g_byte_array_remove_range (t->r_buf, 0, len);
     return len;
   }
-
-  return thrift_buffered_transport_read_slow (transport, buf, len, error);
+  // Else, read more data from the transport
+  return thrift_buffered_udp_transport_read_slow (transport, buf, len, error);
 }
 
 /* implements thrift_transport_read_end
- * called when write is complete.  nothing to do on our end. */
+ * called when read is complete.  nothing to do on our end. */
 gboolean
-thrift_buffered_transport_read_end (ThriftTransport *transport, GError **error)
+thrift_buffered_udp_transport_read_end (ThriftTransport *transport, GError **error)
 {
   /* satisfy -Wall */
   THRIFT_UNUSED_VAR (transport);
@@ -164,27 +168,29 @@ thrift_buffered_transport_read_end (ThriftTransport *transport, GError **error)
 }
 
 gboolean
-thrift_buffered_transport_write_slow (ThriftTransport *transport, gpointer buf,
+thrift_buffered_udp_transport_write_slow (ThriftTransport *transport, gpointer buf,
                                       guint32 len, GError **error)
 {
-  ThriftBufferedTransport *t = THRIFT_BUFFERED_TRANSPORT (transport);
-  guint32 have_bytes = t->w_buf->len;
-  guint32 space = t->w_buf_size - t->w_buf->len;
+  ThriftBufferedUDPTransport *t = THRIFT_BUFFERED_UDP_TRANSPORT (transport);
+  guint32 have_bytes = t->w_buf->len;             // How much is currently in the buffer
+  guint32 space = t->w_buf_size - t->w_buf->len;  // Total size - currently in the buffer (space left)
 
-  /* we need two syscalls because the buffered data plus the buffer itself
-   * is too big. */
-  if ((have_bytes + len >= 2*t->w_buf_size) || (have_bytes == 0))
-  {
-    if (have_bytes > 0)
-    {
+  // We need two syscalls because the buffered data plus the buffer itself
+  // is too big.
+  // have_bytes == 0 --> there is nothing in the buffer
+  if ((have_bytes + len >= 2*t->w_buf_size) || (have_bytes == 0)) {
+    // Write out what we have in the buffer
+    if (have_bytes > 0) {
       if (!THRIFT_TRANSPORT_GET_CLASS (t->transport)->write (t->transport,
                                                              t->w_buf->data,
                                                              have_bytes,
                                                              error)) {
         return FALSE;
       }
+      // Remove what was written from the buffer
       t->w_buf = g_byte_array_remove_range (t->w_buf, 0, have_bytes);
     }
+    // Write what was in the buffer
     if (!THRIFT_TRANSPORT_GET_CLASS (t->transport)->write (t->transport,
                                                            buf, len, error)) {
       return FALSE;
@@ -192,7 +198,10 @@ thrift_buffered_transport_write_slow (ThriftTransport *transport, gpointer buf,
     return TRUE;
   }
 
+  // Add the data to the write buffer if it will fit
   t->w_buf = g_byte_array_append (t->w_buf, buf, space);
+
+  // Write the buffer
   if (!THRIFT_TRANSPORT_GET_CLASS (t->transport)->write (t->transport,
                                                          t->w_buf->data,
                                                          t->w_buf->len,
@@ -200,34 +209,39 @@ thrift_buffered_transport_write_slow (ThriftTransport *transport, gpointer buf,
     return FALSE;
   }
 
+  // Remove the written range
   t->w_buf = g_byte_array_remove_range (t->w_buf, 0, t->w_buf->len);
-  t->w_buf = g_byte_array_append (t->w_buf, (guint8 *)buf + space, len-space);
+
+  // Add what wasn't written in the buffer (i.e., if it was too big but 
+  // not enough to warrant two syscalls) to the write buffer
+  t->w_buf = g_byte_array_append (t->w_buf, buf+space, len-space);
 
   return TRUE;
 }
 
 /* implements thrift_transport_write */
 gboolean
-thrift_buffered_transport_write (ThriftTransport *transport,
+thrift_buffered_udp_transport_write (ThriftTransport *transport,
                                  const gpointer buf,
                                  const guint32 len, GError **error)
 {
-  ThriftBufferedTransport *t = THRIFT_BUFFERED_TRANSPORT (transport);
+  ThriftBufferedUDPTransport *t = THRIFT_BUFFERED_UDP_TRANSPORT (transport);
 
-  /* the length of the current buffer plus the length of the data being read */
-  if (t->w_buf->len + len <= t->w_buf_size)
-  {
+  // If the length of the current buffer plus the length of the data being read
+  // then add it to the buffer and return (fast path)
+  if (t->w_buf->len + len <= t->w_buf_size) {
     t->w_buf = g_byte_array_append (t->w_buf, buf, len);
     return len;
   }
 
-  return thrift_buffered_transport_write_slow (transport, buf, len, error);
+  // Else, we need to write the buffer out
+  return thrift_buffered_udp_transport_write_slow (transport, buf, len, error);
 }
 
 /* implements thrift_transport_write_end
  * called when write is complete.  nothing to do on our end. */
 gboolean
-thrift_buffered_transport_write_end (ThriftTransport *transport, GError **error)
+thrift_buffered_udp_transport_write_end (ThriftTransport *transport, GError **error)
 {
   /* satisfy -Wall */
   THRIFT_UNUSED_VAR (transport);
@@ -237,13 +251,14 @@ thrift_buffered_transport_write_end (ThriftTransport *transport, GError **error)
 
 /* implements thrift_transport_flush */
 gboolean
-thrift_buffered_transport_flush (ThriftTransport *transport, GError **error)
+thrift_buffered_udp_transport_flush (ThriftTransport *transport, GError **error)
 {
-  ThriftBufferedTransport *t = THRIFT_BUFFERED_TRANSPORT (transport);
+  ThriftBufferedUDPTransport *t = THRIFT_BUFFERED_UDP_TRANSPORT (transport);
 
+  // If the buffer isn't null and has data
   if (t->w_buf != NULL && t->w_buf->len > 0)
   {
-    /* write the buffer and then empty it */
+    // Write the entire buffer and then empty it
     if (!THRIFT_TRANSPORT_GET_CLASS (t->transport)->write (t->transport,
                                                            t->w_buf->data,
                                                            t->w_buf->len,
@@ -252,6 +267,7 @@ thrift_buffered_transport_flush (ThriftTransport *transport, GError **error)
     }
     t->w_buf = g_byte_array_remove_range (t->w_buf, 0, t->w_buf->len);
   }
+  
   THRIFT_TRANSPORT_GET_CLASS (t->transport)->flush (t->transport,
                                                     error);
 
@@ -260,7 +276,7 @@ thrift_buffered_transport_flush (ThriftTransport *transport, GError **error)
 
 /* initializes the instance */
 static void
-thrift_buffered_transport_init (ThriftBufferedTransport *transport)
+thrift_buffered_udp_transport_init (ThriftBufferedUDPTransport *transport)
 {
   transport->transport = NULL;
   transport->r_buf = g_byte_array_new ();
@@ -269,9 +285,9 @@ thrift_buffered_transport_init (ThriftBufferedTransport *transport)
 
 /* destructor */
 static void
-thrift_buffered_transport_finalize (GObject *object)
+thrift_buffered_udp_transport_finalize (GObject *object)
 {
-  ThriftBufferedTransport *transport = THRIFT_BUFFERED_TRANSPORT (object);
+  ThriftBufferedUDPTransport *transport = THRIFT_BUFFERED_UDP_TRANSPORT (object);
 
   if (transport->r_buf != NULL)
   {
@@ -288,22 +304,21 @@ thrift_buffered_transport_finalize (GObject *object)
 
 /* property accessor */
 void
-thrift_buffered_transport_get_property (GObject *object, guint property_id,
+thrift_buffered_udp_transport_get_property (GObject *object, guint property_id,
                                         GValue *value, GParamSpec *pspec)
 {
-  ThriftBufferedTransport *transport = THRIFT_BUFFERED_TRANSPORT (object);
-
   THRIFT_UNUSED_VAR (pspec);
+  ThriftBufferedUDPTransport *transport = THRIFT_BUFFERED_UDP_TRANSPORT (object);
 
   switch (property_id)
   {
-    case PROP_THRIFT_BUFFERED_TRANSPORT_TRANSPORT:
+    case PROP_THRIFT_BUFFERED_UDP_TRANSPORT_TRANSPORT:
       g_value_set_object (value, transport->transport);
       break;
-    case PROP_THRIFT_BUFFERED_TRANSPORT_READ_BUFFER_SIZE:
+    case PROP_THRIFT_BUFFERED_UDP_TRANSPORT_READ_BUFFER_SIZE:
       g_value_set_uint (value, transport->r_buf_size);
       break;
-    case PROP_THRIFT_BUFFERED_TRANSPORT_WRITE_BUFFER_SIZE:
+    case PROP_THRIFT_BUFFERED_UDP_TRANSPORT_WRITE_BUFFER_SIZE:
       g_value_set_uint (value, transport->w_buf_size);
       break;
   }
@@ -311,22 +326,21 @@ thrift_buffered_transport_get_property (GObject *object, guint property_id,
 
 /* property mutator */
 void
-thrift_buffered_transport_set_property (GObject *object, guint property_id,
+thrift_buffered_udp_transport_set_property (GObject *object, guint property_id,
                                         const GValue *value, GParamSpec *pspec)
 {
-  ThriftBufferedTransport *transport = THRIFT_BUFFERED_TRANSPORT (object);
-
   THRIFT_UNUSED_VAR (pspec);
+  ThriftBufferedUDPTransport *transport = THRIFT_BUFFERED_UDP_TRANSPORT (object);
 
   switch (property_id)
   {
-    case PROP_THRIFT_BUFFERED_TRANSPORT_TRANSPORT:
+    case PROP_THRIFT_BUFFERED_UDP_TRANSPORT_TRANSPORT:
       transport->transport = g_value_get_object (value);
       break;
-    case PROP_THRIFT_BUFFERED_TRANSPORT_READ_BUFFER_SIZE:
+    case PROP_THRIFT_BUFFERED_UDP_TRANSPORT_READ_BUFFER_SIZE:
       transport->r_buf_size = g_value_get_uint (value);
       break;
-    case PROP_THRIFT_BUFFERED_TRANSPORT_WRITE_BUFFER_SIZE:
+    case PROP_THRIFT_BUFFERED_UDP_TRANSPORT_WRITE_BUFFER_SIZE:
       transport->w_buf_size = g_value_get_uint (value);
       break;
   }
@@ -334,22 +348,21 @@ thrift_buffered_transport_set_property (GObject *object, guint property_id,
 
 /* initializes the class */
 static void
-thrift_buffered_transport_class_init (ThriftBufferedTransportClass *cls)
+thrift_buffered_udp_transport_class_init (ThriftBufferedUDPTransportClass *cls)
 {
-  ThriftTransportClass *ttc = THRIFT_TRANSPORT_CLASS (cls);
   GObjectClass *gobject_class = G_OBJECT_CLASS (cls);
   GParamSpec *param_spec = NULL;
 
   /* setup accessors and mutators */
-  gobject_class->get_property = thrift_buffered_transport_get_property;
-  gobject_class->set_property = thrift_buffered_transport_set_property;
+  gobject_class->get_property = thrift_buffered_udp_transport_get_property;
+  gobject_class->set_property = thrift_buffered_udp_transport_set_property;
 
   param_spec = g_param_spec_object ("transport", "transport (construct)",
                                     "Thrift transport",
                                     THRIFT_TYPE_TRANSPORT,
                                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
   g_object_class_install_property (gobject_class,
-                                   PROP_THRIFT_BUFFERED_TRANSPORT_TRANSPORT,
+                                   PROP_THRIFT_BUFFERED_UDP_TRANSPORT_TRANSPORT,
                                    param_spec);
 
   param_spec = g_param_spec_uint ("r_buf_size",
@@ -361,7 +374,7 @@ thrift_buffered_transport_class_init (ThriftBufferedTransportClass *cls)
                                   G_PARAM_CONSTRUCT_ONLY |
                                   G_PARAM_READWRITE);
   g_object_class_install_property (gobject_class,
-                                   PROP_THRIFT_BUFFERED_TRANSPORT_READ_BUFFER_SIZE,
+                                   PROP_THRIFT_BUFFERED_UDP_TRANSPORT_READ_BUFFER_SIZE,
                                    param_spec);
 
   param_spec = g_param_spec_uint ("w_buf_size",
@@ -373,18 +386,20 @@ thrift_buffered_transport_class_init (ThriftBufferedTransportClass *cls)
                                   G_PARAM_CONSTRUCT_ONLY |
                                   G_PARAM_READWRITE);
   g_object_class_install_property (gobject_class,
-                                   PROP_THRIFT_BUFFERED_TRANSPORT_WRITE_BUFFER_SIZE,
+                                   PROP_THRIFT_BUFFERED_UDP_TRANSPORT_WRITE_BUFFER_SIZE,
                                    param_spec);
 
 
-  gobject_class->finalize = thrift_buffered_transport_finalize;
-  ttc->is_open = thrift_buffered_transport_is_open;
-  ttc->peek = thrift_buffered_transport_peek;
-  ttc->open = thrift_buffered_transport_open;
-  ttc->close = thrift_buffered_transport_close;
-  ttc->read = thrift_buffered_transport_read;
-  ttc->read_end = thrift_buffered_transport_read_end;
-  ttc->write = thrift_buffered_transport_write;
-  ttc->write_end = thrift_buffered_transport_write_end;
-  ttc->flush = thrift_buffered_transport_flush;
+  ThriftTransportClass *ttc = THRIFT_TRANSPORT_CLASS (cls);
+
+  gobject_class->finalize = thrift_buffered_udp_transport_finalize;
+  ttc->is_open = thrift_buffered_udp_transport_is_open;
+  ttc->peek = thrift_buffered_udp_transport_peek;
+  ttc->open = thrift_buffered_udp_transport_open;
+  ttc->close = thrift_buffered_udp_transport_close;
+  ttc->read = thrift_buffered_udp_transport_read;
+  ttc->read_end = thrift_buffered_udp_transport_read_end;
+  ttc->write = thrift_buffered_udp_transport_write;
+  ttc->write_end = thrift_buffered_udp_transport_write_end;
+  ttc->flush = thrift_buffered_udp_transport_flush;
 }

@@ -27,7 +27,7 @@
 #include <thrift/c_glib/protocol/thrift_protocol_factory.h>
 #include <thrift/c_glib/server/thrift_server.h>
 #include <thrift/c_glib/server/thrift_simple_server.h>
-#include <thrift/c_glib/transport/thrift_buffered_transport_factory.h>
+#include <thrift/c_glib/transport/thrift_buffered_udp_transport_factory.h>
 #include <thrift/c_glib/transport/thrift_server_udp_socket.h>
 #include <thrift/c_glib/transport/thrift_server_transport.h>
 
@@ -470,9 +470,9 @@ int main (void)
 
   /* Create our transport factory, used by the server to wrap "raw"
      incoming connections from the client (in this case with a
-     ThriftBufferedTransport to improve performance) */
+     ThriftBufferedUDPTransport to improve performance) */
   transport_factory =
-    g_object_new (THRIFT_TYPE_BUFFERED_TRANSPORT_FACTORY,
+    g_object_new (THRIFT_TYPE_BUFFERED_UDP_TRANSPORT_FACTORY,
                   NULL);
 
   /* Create our protocol factory, which determines which wire protocol

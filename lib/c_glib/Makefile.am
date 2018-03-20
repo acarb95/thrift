@@ -51,6 +51,8 @@ libthrift_c_glib_la_SOURCES = src/thrift/c_glib/thrift.c \
                               src/thrift/c_glib/transport/thrift_buffered_transport.c \
                               src/thrift/c_glib/transport/thrift_framed_transport.c \
                               src/thrift/c_glib/transport/thrift_memory_buffer.c \
+                              src/thrift/c_glib/transport/thrift_buffered_udp_transport.c \
+                              src/thrift/c_glib/transport/thrift_buffered_udp_transport_factory.c \
                               src/thrift/c_glib/transport/thrift_udp_socket.c \
 							  src/thrift/c_glib/transport/thrift_server_udp_socket.c \
                               src/thrift/c_glib/server/thrift_server.c \
@@ -83,7 +85,9 @@ include_transport_HEADERS = src/thrift/c_glib/transport/thrift_buffered_transpor
                             src/thrift/c_glib/transport/thrift_buffered_transport_factory.h \
                             src/thrift/c_glib/transport/thrift_framed_transport_factory.h \
 							src/thrift/c_glib/transport/thrift_udp_socket.h \
-							src/thrift/c_glib/transport/thrift_server_udp_socket.h
+							src/thrift/c_glib/transport/thrift_server_udp_socket.h \
+							src/thrift/c_glib/transport/thrift_buffered_udp_transport.h \
+                            src/thrift/c_glib/transport/thrift_buffered_udp_transport_factory.h
 
 include_serverdir = $(include_thriftdir)/server
 include_server_HEADERS = src/thrift/c_glib/server/thrift_server.h \

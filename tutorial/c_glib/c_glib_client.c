@@ -21,7 +21,7 @@
 #include <glib-object.h>
 
 #include <thrift/c_glib/protocol/thrift_binary_protocol.h>
-#include <thrift/c_glib/transport/thrift_buffered_transport.h>
+#include <thrift/c_glib/transport/thrift_buffered_udp_transport.h>
 #include <thrift/c_glib/transport/thrift_udp_socket.h>
 
 #include "gen-c_glib/calculator.h"
@@ -51,7 +51,7 @@ int main (void)
                             "hostname",  "0:0:102::",
                             "port",      9090,
                             NULL);
-  transport = g_object_new (THRIFT_TYPE_BUFFERED_TRANSPORT,
+  transport = g_object_new (THRIFT_TYPE_BUFFERED_UDP_TRANSPORT,
                             "transport", socket,
                             NULL);
   protocol  = g_object_new (THRIFT_TYPE_BINARY_PROTOCOL,
