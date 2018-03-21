@@ -60,21 +60,18 @@ thrift_binary_protocol_write_message_begin (ThriftProtocol *protocol,
   gint32 ret;
   gint32 xfer = 0;
 
-  // g_message("thrift_binary_protocol_write_message_begin: Writing protocol version %d", version);
   if ((ret = thrift_protocol_write_i32 (protocol, version, error)) < 0)
   {
     return -1;
   }
   xfer += ret;
 
-  // g_message("thrift_binary_protocol_write_message_begin: Writing method name %s", name);
   if ((ret = thrift_protocol_write_string (protocol, name, error)) < 0)
   {
     return -1;
   }
   xfer += ret;
 
-  // g_message("thrift_binary_protocol_write_message_begin: Writing sequence ID: %d", seqid);
   if ((ret = thrift_protocol_write_i32 (protocol, seqid, error)) < 0)
   {
     return -1;
@@ -306,7 +303,6 @@ thrift_binary_protocol_write_i32 (ThriftProtocol *protocol, const gint32 value,
   g_return_val_if_fail (THRIFT_IS_BINARY_PROTOCOL (protocol), -1);
 
   gint32 net = g_htonl (value);
-  // g_message("thrift_binary_protocol_write_i32: writing i32 g_htonl(%d) = %d", value, net);
   if (thrift_transport_write (protocol->transport,
                               (const gpointer) &net, 4, error))
   {
@@ -355,7 +351,6 @@ thrift_binary_protocol_write_string (ThriftProtocol *protocol,
   g_return_val_if_fail (THRIFT_IS_BINARY_PROTOCOL (protocol), -1);
 
   guint32 len = str != NULL ? strlen (str) : 0;
-  // g_message("thrift_binary_protocol_write_string: writing string %s", str);
   /* write the string length + 1 which includes the null terminator */
   return thrift_protocol_write_binary (protocol, (const gpointer) str, 
                                        len, error);
@@ -410,7 +405,6 @@ thrift_binary_protocol_read_message_begin (ThriftProtocol *protocol,
 
   if (sz < 0)
   {
-    // g_message("thrift_binary_protocol: sz is %d", sz);
     /* check for version */
     guint32 version = sz & THRIFT_BINARY_PROTOCOL_VERSION_MASK;
     if (version != THRIFT_BINARY_PROTOCOL_VERSION_1)
@@ -424,15 +418,12 @@ thrift_binary_protocol_read_message_begin (ThriftProtocol *protocol,
 
     *message_type = (ThriftMessageType) (sz & 0x000000ff);
 
-    // g_message("thrift_binary_protocol: message_type = %d", *message_type);
-    // g_message("thrift_binary_protocol: attempting to read method name.");
     if ((ret = thrift_protocol_read_string (protocol, name, error)) < 0)
     {
       return -1;
     }
     xfer += ret;
 
-    // g_message("thrift_binary_protocol: attempting to read sequence id");
     if ((ret = thrift_protocol_read_i32 (protocol, seqid, error)) < 0)
     {
       return -1;

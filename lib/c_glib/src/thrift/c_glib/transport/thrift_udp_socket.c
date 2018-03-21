@@ -29,6 +29,8 @@
 #include <thrift/c_glib/thrift.h>
 #include <thrift/c_glib/transport/thrift_transport.h>
 #include <thrift/c_glib/transport/thrift_udp_socket.h>
+#include <thrift/c_glib/protocol/thrift_protocol.h>
+#include <thrift/c_glib/protocol/thrift_binary_protocol.h>
 
 /* object properties */
 enum _ThriftUDPSocketProperties
@@ -186,6 +188,33 @@ gboolean
 thrift_udp_socket_close (ThriftTransport *transport, GError **error)
 {
   ThriftUDPSocket *socket = THRIFT_UDP_SOCKET (transport);
+
+  // If this is not a server socket, we need to notify the server we are closing
+  if (!THRIFT_UDP_SOCKET(transport)->server) {
+    // NOTE: this is reliant on the binary_protocol, which violates the abstraction
+    // layers thrift is built upon. It is just a hack to make things work.
+    
+    // Create close command (T_CLOSE)
+    gint32 version = (THRIFT_BINARY_PROTOCOL_VERSION_1)
+                     | ((gint32) T_CLOSE);
+    gchar *name = "";
+    gint32 len = 0;
+    gint32 seqid = 0;
+
+    GByteArray* buf = g_byte_array_new();
+
+    // Construct the message
+    buf = g_byte_array_append(buf, (const gpointer) &version, 4);
+    buf = g_byte_array_append(buf, (const gpointer) &len, 4);
+    buf = g_byte_array_append(buf, (const gpointer) name, len);
+    buf = g_byte_array_append(buf, (const gpointer) &seqid, 4);
+
+    // Write the message
+    THRIFT_TRANSPORT_GET_CLASS(transport)->write(transport, buf->data, buf->len, error);
+
+    // Free the message
+    g_byte_array_free(buf, TRUE);
+  }
 
   if (close (socket->sd) == -1)
   {

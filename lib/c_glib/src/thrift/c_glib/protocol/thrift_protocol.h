@@ -64,7 +64,8 @@ typedef enum {
   T_CALL      = 1,
   T_REPLY     = 2,
   T_EXCEPTION = 3,
-  T_ONEWAY    = 4
+  T_ONEWAY    = 4,
+  T_CLOSE     = 5 // Signal the server to close the connection
 } ThriftMessageType;
 
 /* type macros */

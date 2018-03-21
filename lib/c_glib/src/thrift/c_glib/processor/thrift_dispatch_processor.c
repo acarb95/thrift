@@ -36,7 +36,7 @@ thrift_dispatch_processor_process (ThriftProcessor *processor,
   gint32 seqid;
   ThriftDispatchProcessor *dispatch_processor =
     THRIFT_DISPATCH_PROCESSOR (processor);
-  // g_message("thrift_dispatch_processor: reading in message.");
+
   /* Read the start of the message, which we expect to be a method call */
   if (thrift_protocol_read_message_begin (in,
                                           &fname,
@@ -46,9 +46,10 @@ thrift_dispatch_processor_process (ThriftProcessor *processor,
     g_warning ("error reading start of message: %s",
                (error != NULL) ? (*error)->message : "(null)");
     return FALSE;
-  }
-  else if (mtype != T_CALL && mtype != T_ONEWAY) {
-    g_warning ("received invalid message type %d from client", mtype);
+  } else if (mtype == T_CLOSE){
+    return FALSE; // need to terminate the connection, client closed it
+  } else if (mtype != T_CALL && mtype != T_ONEWAY) {
+    g_warning ("received invalid message type %x from client", mtype);
     return FALSE;
   }
 

@@ -39,10 +39,8 @@ thrift_simple_server_serve (ThriftServer *server, GError **error)
     tss->running = TRUE;
     while (tss->running == TRUE)
     {
-        // g_message("thrift_simple_server_serve: before accept call.");
-        t = thrift_server_transport_accept (server->server_transport,
+      t = thrift_server_transport_accept (server->server_transport,
                                           error);
-        // g_message("thrift_simple_server_serve: got a connection.");
       if (t != NULL && tss->running) {
         input_transport =
           THRIFT_TRANSPORT_FACTORY_GET_CLASS (server->input_transport_factory)
@@ -57,8 +55,6 @@ thrift_simple_server_serve (ThriftServer *server, GError **error)
           THRIFT_PROTOCOL_FACTORY_GET_CLASS (server->output_protocol_factory)
           ->get_protocol (server->output_protocol_factory, output_transport);
 
-        // g_message("thrift_simple_server: processing connection...");
-        // TODO: check to see if this while works (might hang here even once the client is done)
         while (THRIFT_PROCESSOR_GET_CLASS (server->processor)
                ->process (server->processor,
                           input_protocol,
