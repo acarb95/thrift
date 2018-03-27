@@ -33,7 +33,7 @@ service SharedMemoryTest {
 	 * Request the server to increment all values in a region
 	 * Server returns a new memory region of the incremented values
 	 */
-	binary increment_mem(1:binary pointer, 2:i32 value, 3:i32 length) throws (1:CallException ouch),
+	binary increment_mem(1:binary pointer, 2:byte value, 3:i32 length) throws (1:CallException ouch),
 
 	/**
 	 * Request the server to free memory
