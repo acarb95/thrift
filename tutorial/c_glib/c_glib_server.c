@@ -21,6 +21,8 @@
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
+#include <unistd.h>
 
 #include <thrift/c_glib/thrift.h>
 #include <thrift/c_glib/protocol/thrift_binary_protocol_factory.h>
@@ -31,7 +33,10 @@
 #include <thrift/c_glib/transport/thrift_server_udp_socket.h>
 #include <thrift/c_glib/transport/thrift_server_transport.h>
 
-#include "gen-c_glib/calculator.h"
+#include "gen-c_glib/shared_memory_test.h"
+#include "../lib/client_lib.h"
+#include "../lib/config.h"
+#include "../lib/utils.h"
 
 G_BEGIN_DECLS
 
@@ -39,15 +44,15 @@ G_BEGIN_DECLS
    server---that is, the code that runs when a client invokes a
    service method---is defined in a separate "handler" class that
    implements the service interface. Here we define the
-   TutorialCalculatorHandler class, which implements the CalculatorIf
+   TutorialSharedMemoryTestHandler class, which implements the SharedMemoryTestIf
    interface and provides the behavior expected by tutorial clients.
    (Typically this code would be placed in its own module but for
    clarity this tutorial is presented entirely in a single file.)
 
    For each service the Thrift compiler generates an abstract base
    class from which handler implementations should inherit. In our
-   case TutorialCalculatorHandler inherits from CalculatorHandler,
-   defined in gen-c_glib/calculator.h.
+   case TutorialSharedMemoryTestHandler inherits from SharedMemoryTestHandler,
+   defined in gen-c_glib/shared_memory_test.h.
 
    If you're new to GObject, try not to be intimidated by the quantity
    of code here---much of it is boilerplate and can mostly be
@@ -55,65 +60,58 @@ G_BEGIN_DECLS
    the GObject Reference Manual, available online at
    https://developer.gnome.org/gobject/. */
 
-#define TYPE_TUTORIAL_CALCULATOR_HANDLER \
-  (tutorial_calculator_handler_get_type ())
+#define TYPE_TUTORIAL_SHARED_MEMORY_TEST_HANDLER \
+  (tutorial_shared_memory_test_handler_get_type ())
 
-#define TUTORIAL_CALCULATOR_HANDLER(obj)                                \
+#define TUTORIAL_SHARED_MEMORY_TEST_HANDLER(obj)                                \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj),                                   \
-                               TYPE_TUTORIAL_CALCULATOR_HANDLER,        \
-                               TutorialCalculatorHandler))
-#define TUTORIAL_CALCULATOR_HANDLER_CLASS(c)                    \
+                               TYPE_TUTORIAL_SHARED_MEMORY_TEST_HANDLER,        \
+                               TutorialSharedMemoryTestHandler))
+#define TUTORIAL_SHARED_MEMORY_TEST_HANDLER_CLASS(c)                    \
   (G_TYPE_CHECK_CLASS_CAST ((c),                                \
-                            TYPE_TUTORIAL_CALCULATOR_HANDLER,   \
-                            TutorialCalculatorHandlerClass))
-#define IS_TUTORIAL_CALCULATOR_HANDLER(obj)                             \
+                            TYPE_TUTORIAL_SHARED_MEMORY_TEST_HANDLER,   \
+                            TutorialSharedMemoryTestHandlerClass))
+#define IS_TUTORIAL_SHARED_MEMORY_TEST_HANDLER(obj)                             \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj),                                   \
-                               TYPE_TUTORIAL_CALCULATOR_HANDLER))
-#define IS_TUTORIAL_CALCULATOR_HANDLER_CLASS(c)                 \
+                               TYPE_TUTORIAL_SHARED_MEMORY_TEST_HANDLER))
+#define IS_TUTORIAL_SHARED_MEMORY_TEST_HANDLER_CLASS(c)                 \
   (G_TYPE_CHECK_CLASS_TYPE ((c),                                \
-                            TYPE_TUTORIAL_CALCULATOR_HANDLER))
-#define TUTORIAL_CALCULATOR_HANDLER_GET_CLASS(obj)              \
+                            TYPE_TUTORIAL_SHARED_MEMORY_TEST_HANDLER))
+#define TUTORIAL_SHARED_MEMORY_TEST_HANDLER_GET_CLASS(obj)              \
   (G_TYPE_INSTANCE_GET_CLASS ((obj),                            \
-                              TYPE_TUTORIAL_CALCULATOR_HANDLER, \
-                              TutorialCalculatorHandlerClass))
+                              TYPE_TUTORIAL_SHARED_MEMORY_TEST_HANDLER, \
+                              TutorialSharedMemoryTestHandlerClass))
 
-struct _TutorialCalculatorHandler {
-  CalculatorHandler parent_instance;
+struct _TutorialSharedMemoryTestHandler {
+  SharedMemoryTestHandler parent_instance;
 
   /* private */
   GHashTable *log;
 };
-typedef struct _TutorialCalculatorHandler TutorialCalculatorHandler;
+typedef struct _TutorialSharedMemoryTestHandler TutorialSharedMemoryTestHandler;
 
-struct _TutorialCalculatorHandlerClass {
-  CalculatorHandlerClass parent_class;
+struct _TutorialSharedMemoryTestHandlerClass {
+  SharedMemoryTestHandlerClass parent_class;
 };
-typedef struct _TutorialCalculatorHandlerClass TutorialCalculatorHandlerClass;
+typedef struct _TutorialSharedMemoryTestHandlerClass TutorialSharedMemoryTestHandlerClass;
 
-GType tutorial_calculator_handler_get_type (void);
+GType tutorial_shared_memory_test_handler_get_type (void);
 
 G_END_DECLS
 
+struct sockaddr_in6 *targetIP;
+
 /* ---------------------------------------------------------------- */
 
-/* The implementation of TutorialCalculatorHandler follows. */
+/* The implementation of TutorialSharedMemoryTestHandler follows. */
 
-G_DEFINE_TYPE (TutorialCalculatorHandler,
-               tutorial_calculator_handler,
-               TYPE_CALCULATOR_HANDLER);
+G_DEFINE_TYPE (TutorialSharedMemoryTestHandler,
+               tutorial_shared_memory_test_handler,
+               TYPE_SHARED_MEMORY_TEST_HANDLER);
 
-/* Each of a handler's methods accepts at least two parameters: A
-   pointer to the service-interface implementation (the handler object
-   itself) and a handle to a GError structure to receive information
-   about any error that occurs.
-
-   On success, a handler method returns TRUE. A return value of FALSE
-   indicates an error occured and the error parameter has been
-   set. (Methods should not return FALSE without first setting the
-   error parameter.) */
 static gboolean
-tutorial_calculator_handler_ping (CalculatorIf  *iface,
-                                  GError       **error)
+tutorial_shared_memory_test_handler_ping (SharedMemoryTestIf  *iface,
+                                 GError              **error)
 {
   THRIFT_UNUSED_VAR (iface);
   THRIFT_UNUSED_VAR (error);
@@ -123,245 +121,276 @@ tutorial_calculator_handler_ping (CalculatorIf  *iface,
   return TRUE;
 }
 
-/* Service-method parameters are passed through as parameters to the
-   handler method.
-
-   If the service method returns a value an output parameter, _return,
-   is additionally passed to the handler method. This parameter should
-   be set appropriately before the method returns, whenever it
-   succeeds.
-
-   The return value from this method happens to be of a base type,
-   i32, but note if a method returns a complex type such as a map or
-   list *_return will point to a pre-allocated data structure that
-   does not need to be re-allocated and should not be destroyed. */
 static gboolean
-tutorial_calculator_handler_add (CalculatorIf  *iface,
-                                 gint32        *_return,
-                                 const gint32   num1,
-                                 const gint32   num2,
-                                 GError       **error)
+tutorial_shared_memory_test_handler_allocate_mem (SharedMemoryTestIf *iface,
+                                                  GByteArray        **_return,
+                                                  const gint32        size,
+                                                  CallException     **ouch,
+                                                  GError            **error)
 {
   THRIFT_UNUSED_VAR (iface);
   THRIFT_UNUSED_VAR (error);
+  THRIFT_UNUSED_VAR (ouch);
+  THRIFT_UNUSED_VAR (_return);
 
-  printf ("add(%d,%d)\n", num1, num2);
-  *_return = num1 + num2;
+  // puts("Attempting to create new array.");
+  GByteArray *res = g_byte_array_new();
+
+  // printf("allocate_mem(%d)\n", size);
+
+  // g_message("allocate_mem(): Constructing address");
+  struct in6_addr *ipv6Pointer = gen_ip6_target(0);
+  memcpy(&(targetIP->sin6_addr), ipv6Pointer, sizeof(*ipv6Pointer));
+  struct in6_memaddr temp = allocate_rmem(targetIP);
+
+  uint16_t cmd = 0u;
+
+  res = g_byte_array_append(res, (const gpointer) &(temp.wildcard), sizeof(uint32_t));
+  res = g_byte_array_append(res, (const gpointer) &(temp.subid), sizeof(uint16_t));
+  res = g_byte_array_append(res, (const gpointer) &cmd, sizeof(uint16_t));
+  res = g_byte_array_append(res, (const gpointer) &(temp.paddr), sizeof(uint64_t));
+
+  g_byte_array_ref(res); // Increase the reference count so it doesn't get garbage collected
+
+  *_return = res;
+
+  printf("allocate_mem(): returning ");
+  print_n_bytes(res->data, res->len);
 
   return TRUE;
+
 }
 
-/* Any handler method can return a ThriftApplicationException to the
-   client by setting its error parameter appropriately and returning
-   FALSE. See the ThriftApplicationExceptionError enumeration defined
-   in thrift_application_exception.h for a list of recognized
-   exception types (GError codes).
-
-   If a service method can also throw a custom exception (that is, one
-   defined in the .thrift file) an additional output parameter will be
-   provided (here, "ouch") to hold an instance of the exception, when
-   necessary. Note there will be a separate parameter added for each
-   type of exception the method can throw.
-
-   Unlike return values, exception objects are never pre-created; this
-   is always the responsibility of the handler method. */
 static gboolean
-tutorial_calculator_handler_calculate (CalculatorIf      *iface,
-                                       gint32            *_return,
-                                       const gint32       logid,
-                                       const Work        *w,
-                                       InvalidOperation **ouch,
-                                       GError           **error)
-{
-  THRIFT_UNUSED_VAR (error);
-
-  TutorialCalculatorHandler *self;
-
-  gint *log_key;
-  gchar log_value[12];
-  SharedStruct *log_struct;
-
-  gint num1;
-  gint num2;
-  Operation op;
-  gboolean result = TRUE;
-
-  g_return_val_if_fail (IS_TUTORIAL_CALCULATOR_HANDLER (iface),
-                        FALSE);
-  self = TUTORIAL_CALCULATOR_HANDLER (iface);
-
-  /* Remember: Exception objects are never pre-created */
-  g_assert (*ouch == NULL);
-
-  /* Fetch the contents of our Work parameter.
-
-     Note that integer properties of thirty-two bits or fewer in width
-     are _always_ of type gint, regardless of the range of values they
-     hold. A common error is trying to retrieve, say, a structure
-     member defined in the .thrift file as type i16 into a variable of
-     type gint16, which will clobber variables adjacent on the
-     stack. Remember: If you're retrieving an integer property the
-     receiving variable must be of either type gint or gint64, as
-     appropriate. */
-  g_object_get ((Work *)w,
-                "num1", &num1,
-                "num2", &num2,
-                "op",   &op,
-                NULL);
-
-  printf ("calculate(%d,{%d,%d,%d})\n", logid, op, num1, num2);
-
-  switch (op) {
-  case OPERATION_ADD:
-    *_return = num1 + num2;
-    break;
-
-  case OPERATION_SUBTRACT:
-    *_return = num1 - num2;
-    break;
-
-  case OPERATION_MULTIPLY:
-    *_return = num1 * num2;
-    break;
-
-  case OPERATION_DIVIDE:
-    if (num2 == 0) {
-      /* For each custom exception type a subclass of ThriftStruct is
-         generated by the Thrift compiler. Throw an exception by
-         setting the corresponding output parameter to a new instance
-         of its type and returning FALSE. */
-      *ouch = g_object_new (TYPE_INVALID_OPERATION,
-                            "what", op,
-                            "why",  g_strdup ("Cannot divide by 0"),
-                            NULL);
-      result = FALSE;
-
-      /* Note the call to g_strdup above: All the memory used by a
-         ThriftStruct's properties belongs to the object itself and
-         will be freed on destruction. Removing this call to g_strdup
-         will lead to a segmentation fault as the object tries to
-         release memory allocated statically to the program. */
-    }
-    else {
-      *_return = num1 / num2;
-    }
-    break;
-
-  default:
-    *ouch = g_object_new (TYPE_INVALID_OPERATION,
-                          "what", op,
-                          "why",  g_strdup ("Invalid Operation"),
-                          NULL);
-    result = FALSE;
-  }
-
-  /* On success, log a record of the result to our hash table */
-  if (result) {
-    log_key = g_malloc (sizeof *log_key);
-    *log_key = logid;
-
-    snprintf (log_value, sizeof log_value, "%d", *_return);
-
-    log_struct = g_object_new (TYPE_SHARED_STRUCT,
-                               "key",   *log_key,
-                               "value",  g_strdup (log_value),
-                               NULL);
-    g_hash_table_replace (self->log, log_key, log_struct);
-  }
-
-  return result;
-}
-
-/* A one-way method has the same signature as an equivalent, regular
-   method that returns no value. */
-static gboolean
-tutorial_calculator_handler_zip (CalculatorIf  *iface,
-                                 GError       **error)
+tutorial_shared_memory_test_handler_read_mem (SharedMemoryTestIf *iface,
+                                              const GByteArray   *pointer,
+                                              CallException     **ouch,
+                                              GError            **error)
 {
   THRIFT_UNUSED_VAR (iface);
   THRIFT_UNUSED_VAR (error);
+  THRIFT_UNUSED_VAR (ouch);
 
-  puts ("zip()");
+  char *payload = malloc(4096);
+
+  // printf ("read_mem: ");
+  // print_n_bytes(pointer->data, pointer->len);
+
+  struct in6_memaddr temp;
+  memset(&temp, 0, sizeof(struct in6_memaddr));
+  memcpy(&temp, pointer->data, sizeof(struct in6_memaddr));
+
+  get_rmem(payload, 4096, targetIP, &temp);
+
+  printf("read_mem(): \"%s\"\n", payload);
 
   return TRUE;
+
 }
 
-/* As specified in the .thrift file (tutorial.thrift), the Calculator
-   service extends the SharedService service. Correspondingly, in the
-   generated code the Calculator interface, CalculatorIf, extends the
-   SharedService interface, SharedServiceIf, and subclasses of
-   CalculatorHandler should implement its methods as well.
-
-   Here we provide an implementation for the getStruct method from the
-   parent service. */
 static gboolean
-tutorial_calculator_handler_get_struct (SharedServiceIf  *iface,
-                                        SharedStruct    **_return,
-                                        const gint32      key32,
-                                        GError          **error)
+tutorial_shared_memory_test_handler_write_mem (SharedMemoryTestIf *iface,
+                                               const GByteArray   *pointer,
+                                               const gchar        *message,
+                                               CallException     **ouch,
+                                               GError            **error) 
 {
+  THRIFT_UNUSED_VAR (iface);
   THRIFT_UNUSED_VAR (error);
+  THRIFT_UNUSED_VAR (ouch);
 
-  gint key = (gint)key32;
-  TutorialCalculatorHandler *self;
-  SharedStruct *log_struct;
-  gint log_key;
-  gchar *log_value;
+  printf ("write_mem(%s)\n", message);
+  // printf("pointer: ");
+  // print_n_bytes(pointer->data, pointer->len);
 
-  g_return_val_if_fail (IS_TUTORIAL_CALCULATOR_HANDLER (iface),
-                        FALSE);
-  self = TUTORIAL_CALCULATOR_HANDLER (iface);
+  struct in6_memaddr temp;
+  memset(&temp, 0, sizeof(struct in6_memaddr));
+  memcpy(&temp, pointer->data, sizeof(struct in6_memaddr));
 
-  /* Remember: Complex return types are always pre-created and need
-     only be populated */
-  g_assert (*_return != NULL);
-
-  printf ("getStruct(%d)\n", key);
-
-  /* If the key exists in our log, return the corresponding logged
-     data (or an empty SharedStruct structure if it does not).
-
-     Incidentally, note we _must_ here copy the values from the hash
-     table into the return structure. All memory used by the return
-     structure belongs to the structure itself and will be freed once
-     a response is sent to the client. If we merely freed *_return and
-     set it to point to our hash-table entry, that would mean memory
-     would be released (effectively, data erased) out of the hash
-     table! */
-  log_struct = g_hash_table_lookup (self->log, &key);
-  if (log_struct != NULL) {
-    g_object_get (log_struct,
-                  "key",   &log_key,
-                  "value", &log_value,
-                  NULL);
-    g_object_set (*_return,
-                  "key",   log_key,
-                  "value", g_strdup (log_value),
-                  NULL);
-  }
+  write_rmem(targetIP, (char *) message, &temp);
 
   return TRUE;
+
 }
 
-/* TutorialCalculatorHandler's instance finalizer (destructor) */
+static gboolean
+tutorial_shared_memory_test_handler_increment_mem (SharedMemoryTestIf *iface,
+                                                   GByteArray        **_return,
+                                                   const GByteArray   *pointer,
+                                                   const gint32        value,
+                                                   const gint32        length,
+                                                   CallException     **ouch,
+                                                   GError            **error) 
+{
+  THRIFT_UNUSED_VAR (iface);
+  THRIFT_UNUSED_VAR (error);
+  THRIFT_UNUSED_VAR (ouch);
+  GByteArray* res = g_byte_array_new_take((guint8 *) "efgh", 4);
+
+  g_byte_array_ref(res);
+
+  *_return = res;
+
+  printf ("increment_mem of length %d with %d, pointer: ", length, value);
+  print_n_bytes(pointer->data, pointer->len);
+
+  return TRUE;
+
+}
+
+static gboolean
+tutorial_shared_memory_test_handler_free_mem (SharedMemoryTestIf *iface,
+                                              const GByteArray   *pointer, 
+                                              CallException     **ouch, 
+                                              GError            **error) 
+{
+  THRIFT_UNUSED_VAR (iface);
+  THRIFT_UNUSED_VAR (error);
+  THRIFT_UNUSED_VAR (ouch);
+
+  printf ("free_mem: ");
+  print_n_bytes(pointer->data, pointer->len);
+
+  struct in6_memaddr temp;
+  memset(&temp, 0, sizeof(struct in6_memaddr));
+  memcpy(&temp, pointer->data, sizeof(struct in6_memaddr));
+
+  free_rmem(targetIP, &temp);
+
+  return TRUE;
+
+}
+
+static gboolean
+tutorial_shared_memory_test_handler_add_arrays (SharedMemoryTestIf *iface,
+                                                GByteArray        **_return,
+                                                const GByteArray   *array1,
+                                                const GByteArray   *array2,
+                                                const gint32        length1,
+                                                const gint32        length2,
+                                                CallException     **ouch,
+                                                GError            **error)
+{
+  THRIFT_UNUSED_VAR (iface);
+  THRIFT_UNUSED_VAR (error);
+  THRIFT_UNUSED_VAR (ouch);
+  THRIFT_UNUSED_VAR (_return);
+
+  printf ("add_arrays (%d, %d): \n\t1: ", length1, length2);
+  print_n_bytes(array1->data, array1->len);
+  printf("\t2: ");
+  print_n_bytes(array2->data, array2->len);
+
+  return TRUE;
+
+}
+
+static gboolean
+tutorial_shared_memory_test_handler_mat_multiply (SharedMemoryTestIf *iface,
+                                                  const GByteArray   *array,
+                                                  const GByteArray   *matrix,
+                                                  const gint32        length,
+                                                  const tuple        *dimension,
+                                                  const GByteArray   *result_ptr,
+                                                  CallException     **ouch,
+                                                  GError            **error)
+{
+  THRIFT_UNUSED_VAR (iface);
+  THRIFT_UNUSED_VAR (error);
+  THRIFT_UNUSED_VAR (ouch);
+  THRIFT_UNUSED_VAR (result_ptr);
+
+  printf ("mat_multiply (length: %d, dimension: %d, %d): \n\tArray: ", length, dimension->n, dimension->m);
+  print_n_bytes(array->data, array->len);
+  printf("\tMatrix: ");
+  print_n_bytes(matrix->data, matrix->len);
+
+  return TRUE;
+
+}
+
+static gboolean
+tutorial_shared_memory_test_handler_word_count (SharedMemoryTestIf *iface,
+                                                gint32             *_return,
+                                                const GByteArray   *story,
+                                                const gint32        length,
+                                                CallException     **ouch,
+                                                GError            **error)
+{
+  THRIFT_UNUSED_VAR (iface);
+  THRIFT_UNUSED_VAR (error);
+  THRIFT_UNUSED_VAR (ouch);
+  THRIFT_UNUSED_VAR (_return);
+
+  printf("word_count (%d): ", length);
+  print_n_bytes(story->data, story->len);
+
+  return TRUE;
+
+}
+
+static gboolean
+tutorial_shared_memory_test_handler_sort_array (SharedMemoryTestIf *iface,
+                                                GByteArray        **_return,
+                                                const GByteArray   *num_array,
+                                                const gint32        length,
+                                                CallException     **ouch,
+                                                GError            **error)
+{
+  THRIFT_UNUSED_VAR (iface);
+  THRIFT_UNUSED_VAR (error);
+  THRIFT_UNUSED_VAR (ouch);
+  THRIFT_UNUSED_VAR (_return);
+
+  printf("sort_array(%d): ", length);
+  print_n_bytes(num_array->data, num_array->len);
+
+  return TRUE;
+
+}
+
+static gboolean
+tutorial_shared_memory_test_handler_sort_by (SharedMemoryTestIf  *iface,
+                                             GByteArray         **_return,
+                                             const GByteArray    *num_array,
+                                             const gint32         length,
+                                             const GByteArray    *comparator,
+                                             CallException      **ouch,
+                                             GError             **error)
+{
+  THRIFT_UNUSED_VAR (iface);
+  THRIFT_UNUSED_VAR (error);
+  THRIFT_UNUSED_VAR (ouch);
+  THRIFT_UNUSED_VAR (_return);
+
+  printf ("sort_by(%d), array: ", length);
+  print_n_bytes(num_array->data, num_array->len);
+  printf("comparator: ");
+  print_n_bytes(comparator->data, comparator->len);
+
+  return TRUE;
+
+}
+
+/* TutorialSharedMemoryTestHandler's instance finalizer (destructor) */
 static void
-tutorial_calculator_handler_finalize (GObject *object)
+tutorial_shared_memory_test_handler_finalize (GObject *object)
 {
-  TutorialCalculatorHandler *self =
-    TUTORIAL_CALCULATOR_HANDLER (object);
+  TutorialSharedMemoryTestHandler *self =
+    TUTORIAL_SHARED_MEMORY_TEST_HANDLER (object);
 
   /* Free our calculation-log hash table */
   g_hash_table_unref (self->log);
   self->log = NULL;
 
   /* Chain up to the parent class */
-  G_OBJECT_CLASS (tutorial_calculator_handler_parent_class)->
+  G_OBJECT_CLASS (tutorial_shared_memory_test_handler_parent_class)->
     finalize (object);
 }
 
-/* TutorialCalculatorHandler's instance initializer (constructor) */
+/* TutorialSharedMemoryTestHandler's instance initializer (constructor) */
 static void
-tutorial_calculator_handler_init (TutorialCalculatorHandler *self)
+tutorial_shared_memory_test_handler_init (TutorialSharedMemoryTestHandler *self)
 {
   /* Create our calculation-log hash table */
   self->log = g_hash_table_new_full (g_int_hash,
@@ -370,37 +399,45 @@ tutorial_calculator_handler_init (TutorialCalculatorHandler *self)
                                      g_object_unref);
 }
 
-/* TutorialCalculatorHandler's class initializer */
+/* TutorialSharedMemoryTestHandler's class initializer */
 static void
-tutorial_calculator_handler_class_init (TutorialCalculatorHandlerClass *klass)
+tutorial_shared_memory_test_handler_class_init (TutorialSharedMemoryTestHandlerClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-  SharedServiceHandlerClass *shared_service_handler_class =
-    SHARED_SERVICE_HANDLER_CLASS (klass);
-  CalculatorHandlerClass *calculator_handler_class =
-    CALCULATOR_HANDLER_CLASS (klass);
+  SharedMemoryTestHandlerClass *shared_memory_test_handler_class =
+    SHARED_MEMORY_TEST_HANDLER_CLASS (klass);
 
   /* Register our destructor */
-  gobject_class->finalize = tutorial_calculator_handler_finalize;
+  gobject_class->finalize = tutorial_shared_memory_test_handler_finalize;
 
-  /* Register our implementations of CalculatorHandler's methods */
-  calculator_handler_class->ping =
-    tutorial_calculator_handler_ping;
-  calculator_handler_class->add =
-    tutorial_calculator_handler_add;
-  calculator_handler_class->calculate =
-    tutorial_calculator_handler_calculate;
-  calculator_handler_class->zip =
-    tutorial_calculator_handler_zip;
-
-  /* Register our implementation of SharedServiceHandler's method */
-  shared_service_handler_class->get_struct =
-    tutorial_calculator_handler_get_struct;
+  /* Register our implementations of SharedMemoryTestHandler's methods */
+  shared_memory_test_handler_class->ping =
+    tutorial_shared_memory_test_handler_ping;
+  shared_memory_test_handler_class->allocate_mem = 
+    tutorial_shared_memory_test_handler_allocate_mem;
+  shared_memory_test_handler_class->read_mem = 
+    tutorial_shared_memory_test_handler_read_mem;
+  shared_memory_test_handler_class->write_mem = 
+    tutorial_shared_memory_test_handler_write_mem;
+  shared_memory_test_handler_class->increment_mem = 
+    tutorial_shared_memory_test_handler_increment_mem;
+  shared_memory_test_handler_class->free_mem = 
+    tutorial_shared_memory_test_handler_free_mem;
+  shared_memory_test_handler_class->add_arrays = 
+    tutorial_shared_memory_test_handler_add_arrays;
+  shared_memory_test_handler_class->mat_multiply = 
+    tutorial_shared_memory_test_handler_mat_multiply;
+  shared_memory_test_handler_class->word_count = 
+    tutorial_shared_memory_test_handler_word_count;
+  shared_memory_test_handler_class->sort_array = 
+    tutorial_shared_memory_test_handler_sort_array;
+  shared_memory_test_handler_class->sort_by = 
+    tutorial_shared_memory_test_handler_sort_by;
 }
 
 /* ---------------------------------------------------------------- */
 
-/* That ends the implementation of TutorialCalculatorHandler.
+/* That ends the implementation of TutorialSharedMemoryTestHandler.
    Everything below is fairly generic code that sets up a minimal
    Thrift server for tutorial clients. */
 
@@ -429,10 +466,34 @@ sigint_handler (int signal_number)
     thrift_server_stop (server);
 }
 
-int main (void)
+int main (int argc, char *argv[])
 {
-  TutorialCalculatorHandler *handler;
-  CalculatorProcessor *processor;
+  if (argc < 3) {
+    printf("usage\n");
+    return -1;
+  }
+  int c; 
+  struct config myConf;
+  while ((c = getopt (argc, argv, "c:")) != -1) { 
+  switch (c) 
+    { 
+    case 'c':
+      myConf = set_bb_config(optarg, 0);
+      break;
+    case '?': 
+        fprintf (stderr, "Unknown option `-%c'.\n", optopt);
+        printf("usage: -c config\n");
+      return 1; 
+    default:
+      printf("usage\n");
+      return -1;
+    } 
+  } 
+  targetIP = init_sockets(&myConf, 0);
+  set_host_list(myConf.hosts, myConf.num_hosts);
+
+  TutorialSharedMemoryTestHandler *handler;
+  SharedMemoryTestProcessor *processor;
 
   ThriftServerTransport *server_transport;
   ThriftTransportFactory *transport_factory;
@@ -450,14 +511,14 @@ int main (void)
   /* Create an instance of our handler, which provides the service's
      methods' implementation */
   handler =
-    g_object_new (TYPE_TUTORIAL_CALCULATOR_HANDLER,
+    g_object_new (TYPE_TUTORIAL_SHARED_MEMORY_TEST_HANDLER,
                   NULL);
 
   /* Create an instance of the service's processor, automatically
      generated by the Thrift compiler, which parses incoming messages
      and dispatches them to the appropriate method in the handler */
   processor =
-    g_object_new (TYPE_CALCULATOR_PROCESSOR,
+    g_object_new (TYPE_SHARED_MEMORY_TEST_PROCESSOR,
                   "handler", handler,
                   NULL);
 

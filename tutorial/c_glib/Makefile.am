@@ -18,24 +18,32 @@
 #
 AUTOMAKE_OPTIONS = subdir-objects serial-tests
 
+bluebridge_sources := $(shell find "$(top_srcdir)/../obj/lib" -name '*.o')
+
 AM_CFLAGS = -g -Wall -Wextra -pedantic $(GLIB_CFLAGS) $(GOBJECT_CFLAGS) @GCOV_CFLAGS@
-AM_CPPFLAGS = -I$(top_srcdir)/lib/c_glib/src -Igen-c_glib
-AM_LDFLAGS = $(GLIB_LIBS) $(GOBJECT_LIBS) @GCOV_LDFLAGS@
+AM_CPPFLAGS = -I$(top_srcdir)/lib/c_glib/src -Igen-c_glib -I$(top_srcdir)/../obj/lib
+AM_LDFLAGS = $(GLIB_LIBS) $(GOBJECT_LIBS) @GCOV_LDFLAGS@ $(bluebridge_sources)
 
 THRIFT = $(top_builddir)/compiler/cpp/thrift
 
 noinst_LTLIBRARIES = \
 	libtutorialgencglib.la
 
+# nodist_libtutorialgencglib_la_SOURCES = \
+# 	gen-c_glib/calculator.c \
+# 	gen-c_glib/calculator.h \
+# 	gen-c_glib/shared_service.c \
+# 	gen-c_glib/shared_service.h \
+# 	gen-c_glib/shared_types.c \
+# 	gen-c_glib/shared_types.h \
+# 	gen-c_glib/tutorial_types.c \
+# 	gen-c_glib/tutorial_types.h
+
 nodist_libtutorialgencglib_la_SOURCES = \
-	gen-c_glib/calculator.c \
-	gen-c_glib/calculator.h \
-	gen-c_glib/shared_service.c \
-	gen-c_glib/shared_service.h \
-	gen-c_glib/shared_types.c \
-	gen-c_glib/shared_types.h \
-	gen-c_glib/tutorial_types.c \
-	gen-c_glib/tutorial_types.h
+	gen-c_glib/shared_memory_test.c \
+	gen-c_glib/shared_memory_test.h \
+	gen-c_glib/shared_memory_test_types.c \
+	gen-c_glib/shared_memory_test_types.h
 
 libtutorialgencglib_la_LIBADD = \
 	$(top_builddir)/lib/c_glib/libthrift_c_glib.la
@@ -60,7 +68,7 @@ tutorial_client_LDADD = \
 	$(top_builddir)/lib/c_glib/libthrift_c_glib.la
 
 
-$(nodist_libtutorialgencglib_la_SOURCES): $(top_srcdir)/tutorial/tutorial.thrift
+$(nodist_libtutorialgencglib_la_SOURCES): $(top_srcdir)/tutorial/SharedMemoryTest.thrift
 	$(THRIFT) --gen c_glib -r $<
 
 clean-local:

@@ -19,27 +19,52 @@
 
 #include <stdio.h>
 #include <glib-object.h>
+#include <inttypes.h>
+#include <unistd.h>
+#include <string.h>
 
 #include <thrift/c_glib/protocol/thrift_binary_protocol.h>
 #include <thrift/c_glib/transport/thrift_buffered_udp_transport.h>
 #include <thrift/c_glib/transport/thrift_udp_socket.h>
 
-#include "gen-c_glib/calculator.h"
+#include "gen-c_glib/shared_memory_test.h"
+#include "../lib/client_lib.h"
+#include "../lib/config.h"
+#include "../lib/utils.h"
 
-int main (void)
+int main (int argc, char *argv[])
 {
+  if (argc < 3) {
+    printf("usage\n");
+    return -1;
+  }
+  int c; 
+  struct config myConf;
+  while ((c = getopt (argc, argv, "c:")) != -1) { 
+  switch (c) 
+    { 
+    case 'c':
+      myConf = set_bb_config(optarg, 0);
+      break;
+    case '?': 
+        fprintf (stderr, "Unknown option `-%c'.\n", optopt);
+        printf("usage: -c config\n");
+      return 1; 
+    default:
+      printf("usage\n");
+      return -1;
+    } 
+  } 
+  struct sockaddr_in6 *targetIP = init_sockets(&myConf, 0);
+  set_host_list(myConf.hosts, myConf.num_hosts);
+
   ThriftUDPSocket *socket;
   ThriftTransport *transport;
   ThriftProtocol *protocol;
-  CalculatorIf *client;
+  SharedMemoryTestIf *client;
 
   GError *error = NULL;
-  InvalidOperation *invalid_operation = NULL;
-
-  Work *work;
-
-  gint32 sum;
-  gint32 diff;
+  CallException *exception = NULL;
 
   int exit_status = 0;
 
@@ -57,124 +82,81 @@ int main (void)
   protocol  = g_object_new (THRIFT_TYPE_BINARY_PROTOCOL,
                             "transport", transport,
                             NULL);
-  // g_message("Opening transport");
-  thrift_transport_open (transport, &error);
-  // g_message("Creating client object");
 
-  /* In the C (GLib) implementation of Thrift, service methods on the
-     server are accessed via a generated client class that implements
-     the service interface. In this tutorial, we access a Calculator
-     service through an instance of CalculatorClient, which implements
-     CalculatorIf. */
-  client = g_object_new (TYPE_CALCULATOR_CLIENT,
+  thrift_transport_open (transport, &error);
+
+  client = g_object_new (TYPE_SHARED_MEMORY_TEST_CLIENT,
                          "input_protocol",  protocol,
                          "output_protocol", protocol,
                          NULL);
 
-  /* Each of the client methods requires at least two parameters: A
-     pointer to the client-interface implementation (the client
-     object), and a handle to a GError structure to receive
-     information about any error that occurs.
-
-     On success, client methods return TRUE. A return value of FALSE
-     indicates an error occured and the error parameter has been
-     set. */
-  // g_message("Calling ping...");
-  if (!error && calculator_if_ping (client, &error)) {
-    puts ("ping()");
+  puts("Testing ping...");
+  // TEST: ping
+  if (!error && shared_memory_test_if_ping (client, &error)) {
+    puts ("\tping()");
   }
 
-  /* Service methods that return a value do so by passing the result
-     back via an output parameter (here, "sum"). */
-  // g_message("Calling add...");
-  if (!error && calculator_if_add (client, &sum, 1, 1, &error)) {
-    printf ("1+1=%d\n", sum);
+  puts("Testing allocate_mem...");
+  // TEST: allocate_mem
+  GByteArray* res = NULL;
+  if (!error && shared_memory_test_if_allocate_mem(client, &res, 4096, &exception, &error)) {
+    printf("\tReceived: ");
+    print_n_bytes(res->data, res->len);
   }
 
-  /* Thrift structs are implemented as GObjects, with each of the
-     struct's members exposed as an object property. */
-  work = g_object_new (TYPE_WORK, NULL);
+  // TEST: write_mem
+  puts("Testing write_mem...");
 
-  if (!error) {
-    g_object_set (work,
-                  "num1", 1,
-                  "num2", 0,
-                  "op",   OPERATION_DIVIDE,
-                  NULL);
+  // Clear payload
+  char *payload = malloc(4096);
+  snprintf(payload, 50, "HELLO WORLD! How are you?");
 
-    /* Exceptions are passed back from service methods in a manner
-       similar to return values. */
-    // g_message("Calling invalid op calculate...");
-    if (calculator_if_calculate (client,
-                                 NULL,
-                                 1,
-                                 work,
-                                 &invalid_operation,
-                                 &error)) {
-      puts ("Whoa? We can divide by zero!");
-    }
-    else {
-      if (invalid_operation) {
-        gchar *why;
-
-        /* Like structs, exceptions are implemented as objects with
-           properties. */
-        g_object_get (invalid_operation, "why", &why, NULL);
-
-        printf ("InvalidOperation: %s\n", why);
-
-        if (why != NULL)
-          g_free (why);
-        g_object_unref (invalid_operation);
-        invalid_operation = NULL;
-      }
-
-      g_clear_error (&error);
-    }
+  if (!error && shared_memory_test_if_write_mem(client, res, payload, &exception, &error)) {
+    puts ("\twrite_mem()");
   }
 
-  if (!error) {
-    /* Struct objects can be reused across method invocations. */
-    g_object_set (work,
-                  "num1", 15,
-                  "num2", 10,
-                  "op",   OPERATION_SUBTRACT,
-                  NULL);
+  // TEST: read_mem
+  puts("Testing read_mem...");
 
-    // g_message("Calling subtraction calculation...");
-    if (calculator_if_calculate (client,
-                                 &diff,
-                                 1,
-                                 work,
-                                 &invalid_operation,
-                                 &error)) {
-      printf ("15-10=%d\n", diff);
-    }
+  if (!error && shared_memory_test_if_read_mem(client, res, &exception, &error)) {
+    puts ("\tread_mem()");
   }
 
-  g_object_unref (work);
+  // TEST: increment_mem
+  puts("Testing increment_mem...");
+  // TODO: put into it's own utils function
+  // Get server to get memory from.
+  struct in6_addr *ipv6Pointer = gen_ip6_target(0);
+  memcpy(&(targetIP->sin6_addr), ipv6Pointer, sizeof(*ipv6Pointer));
+  struct in6_memaddr temp = allocate_rmem(targetIP);
 
-  if (!error) {
-    SharedStruct *shared_struct;
-    gchar *value;
+  // Insert int array
+  char *int_payload = malloc(4096);
+  int arr[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  memcpy(int_payload, arr, 10);
 
-    shared_struct = g_object_new (TYPE_SHARED_STRUCT, NULL);
+  write_rmem(targetIP, int_payload, &temp);
+  
+  // TODO: put into it's own utils function
+  // Marshal shared pointer address
+  GByteArray* test = g_byte_array_new();
+  uint16_t cmd = 0u;
 
-    /* As defined in the Thrift file, the Calculator service extends
-       the SharedService service. Correspondingly, in the generated
-       code CalculatorIf inherits from SharedServiceIf, and the parent
-       service's methods are accessible through a simple cast. */
-    // g_message("Calling get struct...");
-    if (shared_service_client_get_struct (SHARED_SERVICE_IF (client),
-                                          &shared_struct,
-                                          1,
-                                          &error)) {
-      g_object_get (shared_struct, "value", &value, NULL);
-      printf ("Check log: %s\n", value);
-      g_free (value);
-    }
+  test = g_byte_array_append(test, (const gpointer) &(temp.wildcard), sizeof(uint32_t));
+  test = g_byte_array_append(test, (const gpointer) &(temp.subid), sizeof(uint16_t));
+  test = g_byte_array_append(test, (const gpointer) &cmd, sizeof(uint16_t));
+  test = g_byte_array_append(test, (const gpointer) &(temp.paddr), sizeof(uint64_t));
 
-    g_object_unref (shared_struct);
+  GByteArray* res2 = NULL;
+
+  if (!error && shared_memory_test_if_increment_mem(client, &res2, test, 1, 10, &exception, &error)) {
+    puts ("\tincrement_mem()");
+  }
+
+  puts("Testing free_mem...");
+  // TEST: free_mem
+  if (!error && shared_memory_test_if_free_mem(client, res, &exception, &error)) {
+    puts ("\tfree_mem()");
   }
 
   if (error) {

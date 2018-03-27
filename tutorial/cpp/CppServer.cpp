@@ -56,6 +56,10 @@ class CalculatorHandler : public CalculatorIf {
     return n1 + n2;
   }
 
+  void shared_mem_test(const MyPointer& pointer) {
+    cout << "pointer(" << pointer << ")" << endl;
+  }
+
   int32_t calculate(const int32_t logid, const Work& work) {
     cout << "calculate(" << logid << ", " << work << ")" << endl;
     int32_t val;

@@ -193,7 +193,7 @@ thrift_udp_socket_close (ThriftTransport *transport, GError **error)
   if (!THRIFT_UDP_SOCKET(transport)->server) {
     // NOTE: this is reliant on the binary_protocol, which violates the abstraction
     // layers thrift is built upon. It is just a hack to make things work.
-    
+
     // Create close command (T_CLOSE)
     gint32 version = (THRIFT_BINARY_PROTOCOL_VERSION_1)
                      | ((gint32) T_CLOSE);
@@ -244,6 +244,8 @@ thrift_udp_socket_read (ThriftTransport *transport, gpointer buf,
   guint got = 0;
 
   ThriftUDPSocket *socket = THRIFT_UDP_SOCKET (transport);
+
+  // TODO: do a MSG_PEEK to see the size of the packet before reading it off (avoids large buffer )
 
   // Create the message structure
   guchar buffer[len]; // buffer should only hold as much as the r_buf_size in transport
