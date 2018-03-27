@@ -30,22 +30,22 @@ service SharedMemoryTest {
 	void write_mem(1:binary pointer, 2:string message) throws (1:CallException ouch),
 
 	/**
-	 * Request the server to increment all values in a region
-	 * Server returns a new memory region of the incremented values
-	 */
-	binary increment_mem(1:binary pointer, 2:byte value, 3:i32 length) throws (1:CallException ouch),
-
-	/**
 	 * Request the server to free memory
 	 * Throws an exception if the server 
 	 */
 	void free_mem(1:binary pointer) throws (1:CallException ouch),
 
 	/**
+	 * Request the server to increment all values in a region
+	 * Server returns a new memory region of the incremented values
+	 */
+	binary increment_array(1:binary pointer, 2:byte value, 3:i32 length) throws (1:CallException ouch),
+
+	/**
 	 * Add two arrays and return a pointer to the result.
 	 * Returns an exception if the lengths do not match
 	 */
-	binary add_arrays(1:binary array1, 2:binary array2, 3:i32 length1, 4:i32 length2) throws (1:CallException ouch),
+	binary add_arrays(1:binary array1, 2:binary array2, 3:i32 length) throws (1:CallException ouch),
 
 	/**
 	 * Multiply an array and matrix. Store the result in result_ptr. 
@@ -63,9 +63,4 @@ service SharedMemoryTest {
 	 * Sort a number array, return the sorted array
 	 */
 	binary sort_array(1:binary num_array, 2:i32 length) throws (1:CallException ouch),
-
-	/**
-	 * Sort the array by a specific comparator -- Not sure if this will work
-	 */
-	binary sort_by(1:binary num_array, 2:i32 length, 3:binary comparator) throws (1:CallException ouch),
 }

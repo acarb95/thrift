@@ -227,8 +227,9 @@ thrift_buffered_udp_transport_write (ThriftTransport *transport,
 {
   ThriftBufferedUDPTransport *t = THRIFT_BUFFERED_UDP_TRANSPORT (transport);
 
-  // If the length of the current buffer plus the length of the data being read
+  // If the length of the current buffer plus the length of the data being written
   // then add it to the buffer and return (fast path)
+  // printf("Buffer length: %d, desired len: %d, buffer size: %d", t->w_buf->len, len, t->w_buf_size);
   if (t->w_buf->len + len <= t->w_buf_size) {
     t->w_buf = g_byte_array_append (t->w_buf, buf, len);
     return len;

@@ -323,7 +323,7 @@ thrift_udp_socket_write (ThriftTransport *transport, const gpointer buf,
       g_set_error (error, THRIFT_TRANSPORT_ERROR,
                    THRIFT_TRANSPORT_ERROR_SEND,
                    "failed to send %d bytes - %s", len, strerror(errno));
-      g_message("Sendto failed sending to family %d", ((struct sockaddr*) socket->conn_sock)->sa_family);
+      // g_message("Sendto failed sending to family %d", ((struct sockaddr*) socket->conn_sock)->sa_family);
       return FALSE;
     }
     sent += ret;
