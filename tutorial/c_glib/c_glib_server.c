@@ -108,7 +108,7 @@ struct sockaddr_in6 *targetIP;
 
 void get_result_pointer(struct in6_memaddr *ptr) {
   // Get random memory server
-  struct in6_addr *ipv6Pointer = gen_ip6_target(0);
+  struct in6_addr *ipv6Pointer = gen_rdm_ip6_target();
 
   // Put it's address in targetIP (why?)
   memcpy(&(targetIP->sin6_addr), ipv6Pointer, sizeof(*ipv6Pointer));
@@ -153,7 +153,7 @@ tutorial_shared_memory_test_handler_ping (SharedMemoryTestIf  *iface,
   THRIFT_UNUSED_VAR (iface);
   THRIFT_UNUSED_VAR (error);
 
-  puts ("ping()");
+  // puts ("ping()");
 
   return TRUE;
 }
@@ -184,8 +184,8 @@ tutorial_shared_memory_test_handler_allocate_mem (SharedMemoryTestIf *iface,
 
   *_return = result_ptr;
 
-  printf("allocate_mem(): returning ");
-  print_n_bytes(result_ptr->data, result_ptr->len);
+  // printf("allocate_mem(): returning ");
+  // print_n_bytes(result_ptr->data, result_ptr->len);
 
   return TRUE;
 
@@ -208,7 +208,7 @@ tutorial_shared_memory_test_handler_read_mem (SharedMemoryTestIf *iface,
 
   get_rmem(payload, 4096, targetIP, &args_addr);
 
-  printf("read_mem(): \"%s\"\n", payload);
+  // printf("read_mem(): \"%s\"\n", payload);
 
   free(payload);
   return TRUE;
@@ -226,7 +226,7 @@ tutorial_shared_memory_test_handler_write_mem (SharedMemoryTestIf *iface,
   THRIFT_UNUSED_VAR (error);
   THRIFT_UNUSED_VAR (ouch);
 
-  printf ("write_mem(%s)\n", message);
+  // printf ("write_mem(%s)\n", message);
 
   struct in6_memaddr args_addr;
   unmarshall_shmem_ptr(&args_addr, (GByteArray *) pointer);
@@ -247,8 +247,8 @@ tutorial_shared_memory_test_handler_free_mem (SharedMemoryTestIf *iface,
   THRIFT_UNUSED_VAR (error);
   THRIFT_UNUSED_VAR (ouch);
 
-  printf ("free_mem: ");
-  print_n_bytes(pointer->data, pointer->len);
+  // printf ("free_mem: ");
+  // print_n_bytes(pointer->data, pointer->len);
 
   struct in6_memaddr args_addr;
   unmarshall_shmem_ptr(&args_addr, (GByteArray *) pointer);
@@ -261,12 +261,12 @@ tutorial_shared_memory_test_handler_free_mem (SharedMemoryTestIf *iface,
 
 static gboolean
 tutorial_shared_memory_test_handler_increment_array (SharedMemoryTestIf *iface,
-                                                   GByteArray        **_return,
-                                                   const GByteArray   *pointer,
-                                                   const gint8        value,
-                                                   const gint32        length,
-                                                   CallException     **ouch,
-                                                   GError            **error) 
+                                                     GByteArray        **_return,
+                                                     const GByteArray   *pointer,
+                                                     const gint8         value,
+                                                     const gint32        length,
+                                                     CallException     **ouch,
+                                                     GError            **error) 
 {
   THRIFT_UNUSED_VAR (iface);
   THRIFT_UNUSED_VAR (error);
@@ -299,8 +299,8 @@ tutorial_shared_memory_test_handler_increment_array (SharedMemoryTestIf *iface,
 
   *_return = result_ptr;
 
-  printf("increment_array() returning ");
-  print_n_bytes(result_ptr->data, result_ptr->len);
+  // printf("increment_array() returning ");
+  // print_n_bytes(result_ptr->data, result_ptr->len);
 
   free(int_arr);
   return TRUE;
@@ -323,9 +323,13 @@ tutorial_shared_memory_test_handler_add_arrays (SharedMemoryTestIf *iface,
   GByteArray* result_ptr = g_byte_array_new();
   struct in6_memaddr result_addr;
 
+  // printf("Get result pointer\n");
   get_result_pointer(&result_addr);
 
+  // printf("marshall_shmem_ptr\n");
   marshall_shmem_ptr(&result_ptr, &result_addr);
+  // printf("result pointer: ");
+  // print_n_bytes(result_ptr->data, result_ptr->len);
 
   // Read in params from shared memory
   uint8_t *arr1 = malloc(length);
@@ -334,28 +338,34 @@ tutorial_shared_memory_test_handler_add_arrays (SharedMemoryTestIf *iface,
   struct in6_memaddr arg1_addr;
   struct in6_memaddr arg2_addr;
 
+  // printf("unmarshall_shmem_ptr\n");
   unmarshall_shmem_ptr(&arg1_addr, (GByteArray *) array1);
   unmarshall_shmem_ptr(&arg2_addr, (GByteArray *) array2);
 
+  // printf("get_rmem\n");
   get_rmem((char*) arr1, length, targetIP, &arg1_addr);
   get_rmem((char*) arr2, length, targetIP, &arg2_addr);
 
   // Create result array
   uint8_t *result_array = malloc(length);
 
+  // printf("Perform computation\n");
   // Perform computation
   for (int i = 0; i < length; i++) {
     result_array[i] = arr1[i] + arr2[i];
   }
 
+  // printf("write_rmem\n");
   // Write computation to shared memory
   write_rmem(targetIP, (char*) result_array, &result_addr);
+
+  // printf("increase ref\n");
   g_byte_array_ref(result_ptr);
 
-  printf ("add_arrays (%d): \n\t1: ", length);
-  print_n_bytes(array1->data, array1->len);
-  printf("\t2: ");
-  print_n_bytes(array2->data, array2->len);
+  // printf ("add_arrays (%d): \n\t1: ", length);
+  // print_n_bytes(array1->data, array1->len);
+  // printf("\t2: ");
+  // print_n_bytes(array2->data, array2->len);
 
   *_return = result_ptr;
 
@@ -434,33 +444,47 @@ tutorial_shared_memory_test_handler_sort_array (SharedMemoryTestIf *iface,
 
 }
 
-// static gboolean
-// tutorial_shared_memory_test_handler_sort_by (SharedMemoryTestIf  *iface,
-//                                              GByteArray         **_return,
-//                                              const GByteArray    *num_array,
-//                                              const gint32         length,
-//                                              const GByteArray    *comparator,
-//                                              CallException      **ouch,
-//                                              GError             **error)
-// {
-//   THRIFT_UNUSED_VAR (iface);
-//   THRIFT_UNUSED_VAR (error);
-//   THRIFT_UNUSED_VAR (ouch);
+static gboolean
+tutorial_shared_memory_test_handler_no_op (SharedMemoryTestIf  *iface,
+                                           GByteArray         **_return,
+                                           const GByteArray    *num_array,
+                                           const gint32         length,
+                                           GError             **error)
+{
+  THRIFT_UNUSED_VAR (iface);
+  THRIFT_UNUSED_VAR (error);
 
-//   GByteArray* res = g_byte_array_new();
+  GByteArray* result_ptr = g_byte_array_new();
+  struct in6_memaddr result_addr;
 
-//   g_byte_array_ref(res);
+  get_result_pointer(&result_addr);
 
-//   *_return = res;
+  marshall_shmem_ptr(&result_ptr, &result_addr);
 
-//   printf ("sort_by(%d), array: ", length);
-//   print_n_bytes(num_array->data, num_array->len);
-//   printf("comparator: ");
-//   print_n_bytes(comparator->data, comparator->len);
+  // Read in array from shared memory
+  uint8_t *int_arr = malloc(length);
 
-//   return TRUE;
+  struct in6_memaddr args_addr;
+  unmarshall_shmem_ptr(&args_addr, (GByteArray *) num_array);
 
-// }
+  get_rmem((char *) int_arr, length, targetIP, &args_addr);
+
+  // COMPUTATION
+
+  // Write it to the array
+  write_rmem(targetIP, (char*) int_arr, &result_addr);
+
+  g_byte_array_ref(result_ptr);
+
+  *_return = result_ptr;
+
+  // printf("no_op() returning ");
+  // print_n_bytes(result_ptr->data, result_ptr->len);
+
+  free(int_arr);
+  return TRUE;
+
+}
 
 /* TutorialSharedMemoryTestHandler's instance finalizer (destructor) */
 static void
@@ -521,8 +545,8 @@ tutorial_shared_memory_test_handler_class_init (TutorialSharedMemoryTestHandlerC
     tutorial_shared_memory_test_handler_word_count;
   shared_memory_test_handler_class->sort_array = 
     tutorial_shared_memory_test_handler_sort_array;
-  // shared_memory_test_handler_class->sort_by = 
-  //   tutorial_shared_memory_test_handler_sort_by;
+  shared_memory_test_handler_class->no_op = 
+    tutorial_shared_memory_test_handler_no_op;
 }
 
 /* ---------------------------------------------------------------- */

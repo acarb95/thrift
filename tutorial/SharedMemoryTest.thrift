@@ -63,4 +63,11 @@ service SharedMemoryTest {
 	 * Sort a number array, return the sorted array
 	 */
 	binary sort_array(1:binary num_array, 2:i32 length) throws (1:CallException ouch),
+
+	/**
+	 * Shared pointer no-op. Passes a shared argument and shared result with no operation.
+	 * Client side performs 1 allocate, 1 write, and 1 read.
+	 * Server side performs 1 allocate, 1 read, and 1 write. 
+	 */
+	binary no_op(1:binary num_array, 2:i32 length),
 }
