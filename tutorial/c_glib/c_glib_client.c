@@ -637,7 +637,7 @@ int main (int argc, char *argv[]) {
 
   socket    = g_object_new (THRIFT_TYPE_UDP_SOCKET,
                             "hostname",  "0:0:102::",
-                            "port",      9090,
+                            "port",      9080,
                             NULL);
   transport = g_object_new (THRIFT_TYPE_BUFFERED_UDP_TRANSPORT,
                             "transport", socket,

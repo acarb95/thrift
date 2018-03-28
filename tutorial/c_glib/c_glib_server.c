@@ -640,7 +640,7 @@ int main (int argc, char *argv[])
      listens for client connections */
   server_transport =
     g_object_new (THRIFT_TYPE_SERVER_UDP_SOCKET,
-                  "port", 9090,
+                  "port", 9080,
                   NULL);
 
   /* Create our transport factory, used by the server to wrap "raw"
