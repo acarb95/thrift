@@ -225,7 +225,7 @@ void test_server_functionality(SharedMemoryTestIf *client) {
   test_server_free(client, res, exception, error, TRUE);
 }
 
-uint64_t increment_array(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP, gboolean print) {
+uint64_t test_increment_array(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP, gboolean print) {
   GError *error = NULL;                       // Error (in transport, socket, etc.)
   CallException *exception = NULL;            // Exception (thrown by server)
   struct in6_memaddr args_addr;               // Shared memory address of the argument pointer
@@ -307,7 +307,7 @@ uint64_t increment_array(SharedMemoryTestIf *client, struct sockaddr_in6 *target
   return total;
 }
 
-uint64_t add_arrays(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP, gboolean print) {
+uint64_t test_add_arrays(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP, gboolean print) {
   GError *error = NULL;                       // Error (in transport, socket, etc.)
   CallException *exception = NULL;            // Exception (thrown by server)
   struct in6_memaddr arg1_addr;               // Shared memory address of the argument pointer
@@ -383,6 +383,7 @@ uint64_t add_arrays(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP, g
     }
 cleanupres:
     free(result_arr);
+    free_rmem(targetIP, &result_addr);
   }
 
   // Free malloc'd and GByteArray memory
@@ -392,7 +393,6 @@ cleanupres:
   free_rmem(targetIP, &arg2_addr);    // Free the shared memory
   g_byte_array_free(arg1_ptr, TRUE);  // We allocated this, so we free it
   g_byte_array_free(arg2_ptr, TRUE);  // We allocated this, so we free it
-  free_rmem(targetIP, &result_addr);
   g_byte_array_unref(result_ptr);     // We only received this, so we dereference it
 
   return getns() - start;
@@ -477,8 +477,8 @@ uint64_t no_op_rpc(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP) {
 }
 
 void test_shared_pointer_rpc(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP) {
-  increment_array(client, targetIP, TRUE);
-  add_arrays(client, targetIP, TRUE);
+  test_increment_array(client, targetIP, TRUE);
+  test_add_arrays(client, targetIP, TRUE);
   // mat_multiply(client, targetIP);
   // word_count(client, targetIP);
   // sort_array(client, targetIP);
@@ -551,7 +551,7 @@ void increment_array_perf(SharedMemoryTestIf *client, struct sockaddr_in6 *targe
   uint64_t increment_array_total = 0;
 
   for (int i = 0; i < iterations; i++) {
-    increment_array_times[i] = increment_array(client, targetIP, FALSE);
+    increment_array_times[i] = test_increment_array(client, targetIP, FALSE);
     increment_array_total += increment_array_times[i];
   }
 
@@ -564,7 +564,7 @@ void add_arrays_perf(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP, 
   uint64_t add_arrays_total = 0;
 
   for (int i = 0; i < iterations; i++) {
-    add_arrays_times[i] = add_arrays(client, targetIP, FALSE);
+    add_arrays_times[i] = test_add_arrays(client, targetIP, FALSE);
     add_arrays_total += add_arrays_times[i];
   }
 
