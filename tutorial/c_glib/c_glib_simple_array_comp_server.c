@@ -34,7 +34,8 @@
 #include <thrift/c_glib/transport/thrift_server_udp_socket.h>
 #include <thrift/c_glib/transport/thrift_server_transport.h>
 
-#include "gen-c_glib/shared_memory_test.h"
+#include "gen-c_glib/simple_array_computation.h"
+#include "gen-c_glib/shared_types.h"
 #include "../lib/client_lib.h"
 #include "../lib/config.h"
 #include "../lib/utils.h"
@@ -45,15 +46,15 @@ G_BEGIN_DECLS
    server---that is, the code that runs when a client invokes a
    service method---is defined in a separate "handler" class that
    implements the service interface. Here we define the
-   TutorialSharedMemoryTestHandler class, which implements the SharedMemoryTestIf
+   TutorialSimpleArrayComputationHandler class, which implements the SimpleArrayComputationIf
    interface and provides the behavior expected by tutorial clients.
    (Typically this code would be placed in its own module but for
    clarity this tutorial is presented entirely in a single file.)
 
    For each service the Thrift compiler generates an abstract base
    class from which handler implementations should inherit. In our
-   case TutorialSharedMemoryTestHandler inherits from SharedMemoryTestHandler,
-   defined in gen-c_glib/shared_memory_test.h.
+   case TutorialSimpleArrayComputationHandler inherits from SimpleArrayComputationHandler,
+   defined in gen-c_glib/simple_array_computation.h.
 
    If you're new to GObject, try not to be intimidated by the quantity
    of code here---much of it is boilerplate and can mostly be
@@ -61,42 +62,42 @@ G_BEGIN_DECLS
    the GObject Reference Manual, available online at
    https://developer.gnome.org/gobject/. */
 
-#define TYPE_TUTORIAL_SHARED_MEMORY_TEST_HANDLER \
-  (tutorial_shared_memory_test_handler_get_type ())
+#define TYPE_TUTORIAL_SIMPLE_ARRAY_COMPUTATION_HANDLER \
+  (tutorial_simple_array_computation_handler_get_type ())
 
-#define TUTORIAL_SHARED_MEMORY_TEST_HANDLER(obj)                                \
+#define TUTORIAL_SIMPLE_ARRAY_COMPUTATION_HANDLER(obj)                                \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj),                                   \
-                               TYPE_TUTORIAL_SHARED_MEMORY_TEST_HANDLER,        \
-                               TutorialSharedMemoryTestHandler))
-#define TUTORIAL_SHARED_MEMORY_TEST_HANDLER_CLASS(c)                    \
+                               TYPE_TUTORIAL_SIMPLE_ARRAY_COMPUTATION_HANDLER,        \
+                               TutorialSimpleArrayComputationHandler))
+#define TUTORIAL_SIMPLE_ARRAY_COMPUTATION_HANDLER_CLASS(c)                    \
   (G_TYPE_CHECK_CLASS_CAST ((c),                                \
-                            TYPE_TUTORIAL_SHARED_MEMORY_TEST_HANDLER,   \
-                            TutorialSharedMemoryTestHandlerClass))
-#define IS_TUTORIAL_SHARED_MEMORY_TEST_HANDLER(obj)                             \
+                            TYPE_TUTORIAL_SIMPLE_ARRAY_COMPUTATION_HANDLER,   \
+                            TutorialSimpleArrayComputationHandlerClass))
+#define IS_TUTORIAL_SIMPLE_ARRAY_COMPUTATION_HANDLER(obj)                             \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj),                                   \
-                               TYPE_TUTORIAL_SHARED_MEMORY_TEST_HANDLER))
-#define IS_TUTORIAL_SHARED_MEMORY_TEST_HANDLER_CLASS(c)                 \
+                               TYPE_TUTORIAL_SIMPLE_ARRAY_COMPUTATION_HANDLER))
+#define IS_TUTORIAL_SIMPLE_ARRAY_COMPUTATION_HANDLER_CLASS(c)                 \
   (G_TYPE_CHECK_CLASS_TYPE ((c),                                \
-                            TYPE_TUTORIAL_SHARED_MEMORY_TEST_HANDLER))
-#define TUTORIAL_SHARED_MEMORY_TEST_HANDLER_GET_CLASS(obj)              \
+                            TYPE_TUTORIAL_SIMPLE_ARRAY_COMPUTATION_HANDLER))
+#define TUTORIAL_SIMPLE_ARRAY_COMPUTATION_HANDLER_GET_CLASS(obj)              \
   (G_TYPE_INSTANCE_GET_CLASS ((obj),                            \
-                              TYPE_TUTORIAL_SHARED_MEMORY_TEST_HANDLER, \
-                              TutorialSharedMemoryTestHandlerClass))
+                              TYPE_TUTORIAL_SIMPLE_ARRAY_COMPUTATION_HANDLER, \
+                              TutorialSimpleArrayComputationHandlerClass))
 
-struct _TutorialSharedMemoryTestHandler {
-  SharedMemoryTestHandler parent_instance;
+struct _TutorialSimpleArrayComputationHandler {
+  SimpleArrayComputationHandler parent_instance;
 
   /* private */
   GHashTable *log;
 };
-typedef struct _TutorialSharedMemoryTestHandler TutorialSharedMemoryTestHandler;
+typedef struct _TutorialSimpleArrayComputationHandler TutorialSimpleArrayComputationHandler;
 
-struct _TutorialSharedMemoryTestHandlerClass {
-  SharedMemoryTestHandlerClass parent_class;
+struct _TutorialSimpleArrayComputationHandlerClass {
+  SimpleArrayComputationHandlerClass parent_class;
 };
-typedef struct _TutorialSharedMemoryTestHandlerClass TutorialSharedMemoryTestHandlerClass;
+typedef struct _TutorialSimpleArrayComputationHandlerClass TutorialSimpleArrayComputationHandlerClass;
 
-GType tutorial_shared_memory_test_handler_get_type (void);
+GType tutorial_simple_array_computation_handler_get_type (void);
 
 G_END_DECLS
 
@@ -104,7 +105,7 @@ struct sockaddr_in6 *targetIP;
 
 /* ---------------------------------------------------------------- */
 
-/* The implementation of TutorialSharedMemoryTestHandler follows. */
+/* The implementation of TutorialSimpleArrayComputationHandler follows. */
 
 void get_result_pointer(struct in6_memaddr *ptr) {
   // Get random memory server
@@ -142,125 +143,12 @@ void unmarshall_shmem_ptr(struct in6_memaddr *result_addr, GByteArray *result_pt
 }
 
 
-G_DEFINE_TYPE (TutorialSharedMemoryTestHandler,
-               tutorial_shared_memory_test_handler,
-               TYPE_SHARED_MEMORY_TEST_HANDLER);
+G_DEFINE_TYPE (TutorialSimpleArrayComputationHandler,
+               tutorial_simple_array_computation_handler,
+               TYPE_SIMPLE_ARRAY_COMPUTATION_HANDLER);
 
 static gboolean
-tutorial_shared_memory_test_handler_ping (SharedMemoryTestIf  *iface,
-                                 GError              **error)
-{
-  THRIFT_UNUSED_VAR (iface);
-  THRIFT_UNUSED_VAR (error);
-
-  // puts ("ping()");
-
-  return TRUE;
-}
-
-static gboolean
-tutorial_shared_memory_test_handler_allocate_mem (SharedMemoryTestIf *iface,
-                                                  GByteArray        **_return,
-                                                  const gint32        size,
-                                                  CallException     **ouch,
-                                                  GError            **error)
-{
-  THRIFT_UNUSED_VAR (iface);
-  THRIFT_UNUSED_VAR (error);
-  THRIFT_UNUSED_VAR (ouch);
-  THRIFT_UNUSED_VAR (_return);
-  THRIFT_UNUSED_VAR (size);
-
-  // TODO: change so it allocates a certain amount of memory
-
-  GByteArray *result_ptr = g_byte_array_new();
-  struct in6_memaddr result_addr;
-
-  get_result_pointer(&result_addr);
-
-  marshall_shmem_ptr(&result_ptr, &result_addr);
-
-  g_byte_array_ref(result_ptr); // Increase the reference count so it doesn't get garbage collected
-
-  *_return = result_ptr;
-
-  // printf("allocate_mem(): returning ");
-  // print_n_bytes(result_ptr->data, result_ptr->len);
-
-  return TRUE;
-
-}
-
-static gboolean
-tutorial_shared_memory_test_handler_read_mem (SharedMemoryTestIf *iface,
-                                              const GByteArray   *pointer,
-                                              CallException     **ouch,
-                                              GError            **error)
-{
-  THRIFT_UNUSED_VAR (iface);
-  THRIFT_UNUSED_VAR (error);
-  THRIFT_UNUSED_VAR (ouch);
-
-  char *payload = malloc(4096);
-
-  struct in6_memaddr args_addr;
-  unmarshall_shmem_ptr(&args_addr, (GByteArray *)pointer);
-
-  get_rmem(payload, 4096, targetIP, &args_addr);
-
-  // printf("read_mem(): \"%s\"\n", payload);
-
-  free(payload);
-  return TRUE;
-
-}
-
-static gboolean
-tutorial_shared_memory_test_handler_write_mem (SharedMemoryTestIf *iface,
-                                               const GByteArray   *pointer,
-                                               const gchar        *message,
-                                               CallException     **ouch,
-                                               GError            **error) 
-{
-  THRIFT_UNUSED_VAR (iface);
-  THRIFT_UNUSED_VAR (error);
-  THRIFT_UNUSED_VAR (ouch);
-
-  // printf ("write_mem(%s)\n", message);
-
-  struct in6_memaddr args_addr;
-  unmarshall_shmem_ptr(&args_addr, (GByteArray *) pointer);
-
-  write_rmem(targetIP, (char *) message, &args_addr);
-
-  return TRUE;
-
-}
-
-static gboolean
-tutorial_shared_memory_test_handler_free_mem (SharedMemoryTestIf *iface,
-                                              const GByteArray   *pointer, 
-                                              CallException     **ouch, 
-                                              GError            **error) 
-{
-  THRIFT_UNUSED_VAR (iface);
-  THRIFT_UNUSED_VAR (error);
-  THRIFT_UNUSED_VAR (ouch);
-
-  // printf ("free_mem: ");
-  // print_n_bytes(pointer->data, pointer->len);
-
-  struct in6_memaddr args_addr;
-  unmarshall_shmem_ptr(&args_addr, (GByteArray *) pointer);
-
-  free_rmem(targetIP, &args_addr);
-
-  return TRUE;
-
-}
-
-static gboolean
-tutorial_shared_memory_test_handler_increment_array (SharedMemoryTestIf *iface,
+tutorial_simple_array_computation_handler_increment_array (SimpleArrayComputationIf *iface,
                                                      GByteArray        **_return,
                                                      const GByteArray   *pointer,
                                                      const gint8         value,
@@ -308,7 +196,7 @@ tutorial_shared_memory_test_handler_increment_array (SharedMemoryTestIf *iface,
 }
 
 static gboolean
-tutorial_shared_memory_test_handler_add_arrays (SharedMemoryTestIf *iface,
+tutorial_simple_array_computation_handler_add_arrays (SimpleArrayComputationIf *iface,
                                                 GByteArray        **_return,
                                                 const GByteArray   *array1,
                                                 const GByteArray   *array2,
@@ -375,7 +263,7 @@ tutorial_shared_memory_test_handler_add_arrays (SharedMemoryTestIf *iface,
 }
 
 static gboolean
-tutorial_shared_memory_test_handler_mat_multiply (SharedMemoryTestIf *iface,
+tutorial_simple_array_computation_handler_mat_multiply (SimpleArrayComputationIf *iface,
                                                   const GByteArray   *array,
                                                   const GByteArray   *matrix,
                                                   const gint32        length,
@@ -389,7 +277,14 @@ tutorial_shared_memory_test_handler_mat_multiply (SharedMemoryTestIf *iface,
   THRIFT_UNUSED_VAR (ouch);
   THRIFT_UNUSED_VAR (result_ptr);
 
-  printf ("mat_multiply (length: %d, dimension: %d, %d): \n\tArray: ", length, dimension->n, dimension->m);
+  gint n, m;
+
+  g_object_get(dimension,
+               "n", &n,
+               "m", &m,
+               NULL);
+
+  printf ("mat_multiply (length: %d, dimension: %d, %d): \n\tArray: ", length, n, m, dimension);
   print_n_bytes(array->data, array->len);
   printf("\tMatrix: ");
   print_n_bytes(matrix->data, matrix->len);
@@ -399,7 +294,7 @@ tutorial_shared_memory_test_handler_mat_multiply (SharedMemoryTestIf *iface,
 }
 
 static gboolean
-tutorial_shared_memory_test_handler_word_count (SharedMemoryTestIf *iface,
+tutorial_simple_array_computation_handler_word_count (SimpleArrayComputationIf *iface,
                                                 gint32             *_return,
                                                 const GByteArray   *story,
                                                 const gint32        length,
@@ -420,7 +315,7 @@ tutorial_shared_memory_test_handler_word_count (SharedMemoryTestIf *iface,
 }
 
 static gboolean
-tutorial_shared_memory_test_handler_sort_array (SharedMemoryTestIf *iface,
+tutorial_simple_array_computation_handler_sort_array (SimpleArrayComputationIf *iface,
                                                 GByteArray        **_return,
                                                 const GByteArray   *num_array,
                                                 const gint32        length,
@@ -445,7 +340,7 @@ tutorial_shared_memory_test_handler_sort_array (SharedMemoryTestIf *iface,
 }
 
 static gboolean
-tutorial_shared_memory_test_handler_no_op (SharedMemoryTestIf  *iface,
+tutorial_simple_array_computation_handler_no_op (SimpleArrayComputationIf  *iface,
                                            GByteArray         **_return,
                                            const GByteArray    *num_array,
                                            const gint32         length,
@@ -486,25 +381,25 @@ tutorial_shared_memory_test_handler_no_op (SharedMemoryTestIf  *iface,
 
 }
 
-/* TutorialSharedMemoryTestHandler's instance finalizer (destructor) */
+/* TutorialSimpleArrayComputationHandler's instance finalizer (destructor) */
 static void
-tutorial_shared_memory_test_handler_finalize (GObject *object)
+tutorial_simple_array_computation_handler_finalize (GObject *object)
 {
-  TutorialSharedMemoryTestHandler *self =
-    TUTORIAL_SHARED_MEMORY_TEST_HANDLER (object);
+  TutorialSimpleArrayComputationHandler *self =
+    TUTORIAL_SIMPLE_ARRAY_COMPUTATION_HANDLER (object);
 
   /* Free our calculation-log hash table */
   g_hash_table_unref (self->log);
   self->log = NULL;
 
   /* Chain up to the parent class */
-  G_OBJECT_CLASS (tutorial_shared_memory_test_handler_parent_class)->
+  G_OBJECT_CLASS (tutorial_simple_array_computation_handler_parent_class)->
     finalize (object);
 }
 
-/* TutorialSharedMemoryTestHandler's instance initializer (constructor) */
+/* TutorialSimpleArrayComputationHandler's instance initializer (constructor) */
 static void
-tutorial_shared_memory_test_handler_init (TutorialSharedMemoryTestHandler *self)
+tutorial_simple_array_computation_handler_init (TutorialSimpleArrayComputationHandler *self)
 {
   /* Create our calculation-log hash table */
   self->log = g_hash_table_new_full (g_int_hash,
@@ -513,45 +408,35 @@ tutorial_shared_memory_test_handler_init (TutorialSharedMemoryTestHandler *self)
                                      g_object_unref);
 }
 
-/* TutorialSharedMemoryTestHandler's class initializer */
+/* TutorialSimpleArrayComputationHandler's class initializer */
 static void
-tutorial_shared_memory_test_handler_class_init (TutorialSharedMemoryTestHandlerClass *klass)
+tutorial_simple_array_computation_handler_class_init (TutorialSimpleArrayComputationHandlerClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-  SharedMemoryTestHandlerClass *shared_memory_test_handler_class =
-    SHARED_MEMORY_TEST_HANDLER_CLASS (klass);
+  SimpleArrayComputationHandlerClass *simple_array_computation_handler_class =
+    SIMPLE_ARRAY_COMPUTATION_HANDLER_CLASS (klass);
 
   /* Register our destructor */
-  gobject_class->finalize = tutorial_shared_memory_test_handler_finalize;
+  gobject_class->finalize = tutorial_simple_array_computation_handler_finalize;
 
-  /* Register our implementations of SharedMemoryTestHandler's methods */
-  shared_memory_test_handler_class->ping =
-    tutorial_shared_memory_test_handler_ping;
-  shared_memory_test_handler_class->allocate_mem = 
-    tutorial_shared_memory_test_handler_allocate_mem;
-  shared_memory_test_handler_class->read_mem = 
-    tutorial_shared_memory_test_handler_read_mem;
-  shared_memory_test_handler_class->write_mem = 
-    tutorial_shared_memory_test_handler_write_mem;
-  shared_memory_test_handler_class->increment_array = 
-    tutorial_shared_memory_test_handler_increment_array;
-  shared_memory_test_handler_class->free_mem = 
-    tutorial_shared_memory_test_handler_free_mem;
-  shared_memory_test_handler_class->add_arrays = 
-    tutorial_shared_memory_test_handler_add_arrays;
-  shared_memory_test_handler_class->mat_multiply = 
-    tutorial_shared_memory_test_handler_mat_multiply;
-  shared_memory_test_handler_class->word_count = 
-    tutorial_shared_memory_test_handler_word_count;
-  shared_memory_test_handler_class->sort_array = 
-    tutorial_shared_memory_test_handler_sort_array;
-  shared_memory_test_handler_class->no_op = 
-    tutorial_shared_memory_test_handler_no_op;
+  /* Register our implementations of SimpleArrayComputationHandler's methods */
+  simple_array_computation_handler_class->increment_array = 
+    tutorial_simple_array_computation_handler_increment_array;
+  simple_array_computation_handler_class->add_arrays = 
+    tutorial_simple_array_computation_handler_add_arrays;
+  simple_array_computation_handler_class->mat_multiply = 
+    tutorial_simple_array_computation_handler_mat_multiply;
+  simple_array_computation_handler_class->word_count = 
+    tutorial_simple_array_computation_handler_word_count;
+  simple_array_computation_handler_class->sort_array = 
+    tutorial_simple_array_computation_handler_sort_array;
+  simple_array_computation_handler_class->no_op = 
+    tutorial_simple_array_computation_handler_no_op;
 }
 
 /* ---------------------------------------------------------------- */
 
-/* That ends the implementation of TutorialSharedMemoryTestHandler.
+/* That ends the implementation of TutorialSimpleArrayComputationHandler.
    Everything below is fairly generic code that sets up a minimal
    Thrift server for tutorial clients. */
 
@@ -606,8 +491,8 @@ int main (int argc, char *argv[])
   targetIP = init_sockets(&myConf, 0);
   set_host_list(myConf.hosts, myConf.num_hosts);
 
-  TutorialSharedMemoryTestHandler *handler;
-  SharedMemoryTestProcessor *processor;
+  TutorialSimpleArrayComputationHandler *handler;
+  SimpleArrayComputationProcessor *processor;
 
   ThriftServerTransport *server_transport;
   ThriftTransportFactory *transport_factory;
@@ -625,14 +510,14 @@ int main (int argc, char *argv[])
   /* Create an instance of our handler, which provides the service's
      methods' implementation */
   handler =
-    g_object_new (TYPE_TUTORIAL_SHARED_MEMORY_TEST_HANDLER,
+    g_object_new (TYPE_TUTORIAL_SIMPLE_ARRAY_COMPUTATION_HANDLER,
                   NULL);
 
   /* Create an instance of the service's processor, automatically
      generated by the Thrift compiler, which parses incoming messages
      and dispatches them to the appropriate method in the handler */
   processor =
-    g_object_new (TYPE_SHARED_MEMORY_TEST_PROCESSOR,
+    g_object_new (TYPE_SIMPLE_ARRAY_COMPUTATION_PROCESSOR,
                   "handler", handler,
                   NULL);
 

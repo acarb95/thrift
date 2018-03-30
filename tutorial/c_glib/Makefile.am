@@ -27,59 +27,80 @@ AM_LDFLAGS = $(GLIB_LIBS) $(GOBJECT_LIBS) @GCOV_LDFLAGS@ $(bluebridge_sources)
 THRIFT = $(top_builddir)/compiler/cpp/thrift
 
 noinst_LTLIBRARIES = \
-	libtutorialgencglib.la
+	libremotememtestgencglib.la \
+	libsimplearraycompgencglib.la
 
-# nodist_libtutorialgencglib_la_SOURCES = \
-# 	gen-c_glib/calculator.c \
-# 	gen-c_glib/calculator.h \
-# 	gen-c_glib/shared_service.c \
-# 	gen-c_glib/shared_service.h \
-# 	gen-c_glib/shared_types.c \
-# 	gen-c_glib/shared_types.h \
-# 	gen-c_glib/tutorial_types.c \
-# 	gen-c_glib/tutorial_types.h
+nodist_libremotememtestgencglib_la_SOURCES = \
+	gen-c_glib/remote_memory_test.c \
+	gen-c_glib/remote_memory_test.h \
+	gen-c_glib/shared_types.c \
+	gen-c_glib/shared_types.h \
+	gen-c_glib/remote_memory_test_types.c \
+	gen-c_glib/remote_memory_test_types.h 
 
-nodist_libtutorialgencglib_la_SOURCES = \
-	gen-c_glib/shared_memory_test.c \
-	gen-c_glib/shared_memory_test.h \
-	gen-c_glib/shared_memory_test_types.c \
-	gen-c_glib/shared_memory_test_types.h
+nodist_libsimplearraycompgencglib_la_SOURCES = \
+	gen-c_glib/simple_array_computation.c \
+	gen-c_glib/simple_array_computation.h \
+	gen-c_glib/shared_types.c \
+	gen-c_glib/shared_types.h \
+	gen-c_glib/simple_array_computation_types.c \
+	gen-c_glib/simple_array_computation_types.h
 
-libtutorialgencglib_la_LIBADD = \
+libremotememtestgencglib_la_LIBADD = \
+	$(top_builddir)/lib/c_glib/libthrift_c_glib.la
+
+libsimplearraycompgencglib_la_LIBADD = \
 	$(top_builddir)/lib/c_glib/libthrift_c_glib.la
 
 
 noinst_PROGRAMS = \
-	tutorial_server \
+	tutorial_remote_mem_test_server \
+	tutorial_simple_array_comp_server \
 	tutorial_client
 
-tutorial_server_SOURCES = \
-	c_glib_server.c
+tutorial_remote_mem_test_server_SOURCES = \
+	c_glib_remote_mem_test_server.c
 
-tutorial_server_LDADD = \
-	libtutorialgencglib.la \
+tutorial_simple_array_comp_server_SOURCES = \
+	c_glib_simple_array_comp_server.c
+
+tutorial_remote_mem_test_server_LDADD = \
+	libremotememtestgencglib.la \
+	$(top_builddir)/lib/c_glib/libthrift_c_glib.la
+
+tutorial_simple_array_comp_server_LDADD = \
+	libsimplearraycompgencglib.la \
 	$(top_builddir)/lib/c_glib/libthrift_c_glib.la
 
 tutorial_client_SOURCES = \
 	c_glib_client.c
 
 tutorial_client_LDADD = \
-	libtutorialgencglib.la \
+	libremotememtestgencglib.la \
+	libsimplearraycompgencglib.la \
 	$(top_builddir)/lib/c_glib/libthrift_c_glib.la
 
 
-$(nodist_libtutorialgencglib_la_SOURCES): $(top_srcdir)/tutorial/SharedMemoryTest.thrift
+$(nodist_libremotememtestgencglib_la_SOURCES): $(top_srcdir)/tutorial/RemoteMemoryTest.thrift
 	$(THRIFT) --gen c_glib -r $<
+
+$(nodist_libsimplearraycompgencglib_la_SOURCES): $(top_srcdir)/tutorial/SimpleArrayComputation.thrift
+	$(THRIFT) --gen c_glib -r $<
+
 
 clean-local:
 	$(RM) gen-c_glib/*
 
-tutorialserver: all
-	./tutorial_server
+tutorialremmemserver: all
+	./tutorial_remote_mem_test_server
+
+tutorialarrcompserver: all
+	./tutorial_simple_array_comp_server
 
 tutorialclient: all
 	./tutorial_client
 
 EXTRA_DIST = \
-	c_glib_server.c \
+	c_glib_remote_mem_test_server.c \
+	c_glib_simple_array_comp_server.c \
 	c_glib_client.c

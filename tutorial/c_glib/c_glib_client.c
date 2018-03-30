@@ -29,7 +29,8 @@
 #include <thrift/c_glib/transport/thrift_udp_socket.h>
 #include <thrift/c_glib/thrift.h>
 
-#include "gen-c_glib/shared_memory_test.h"
+#include "gen-c_glib/remote_memory_test.h"
+#include "gen-c_glib/simple_array_computation.h"
 #include "../lib/client_lib.h"
 #include "../lib/config.h"
 #include "../lib/utils.h"
@@ -98,12 +99,12 @@ void usage(char* prog_name, char* message) {
 }
 
 // TESTS
-uint64_t test_ping(SharedMemoryTestIf *client, GError *error, gboolean print) {
+uint64_t test_ping(RemoteMemoryTestIf *client, GError *error, gboolean print) {
   if(print)
     printf("Testing ping...\t\t\t");
   
   uint64_t ping_start = getns();
-  gboolean success = shared_memory_test_if_ping (client, &error);
+  gboolean success = remote_memory_test_if_ping (client, &error);
   uint64_t ping_time = getns() - ping_start;
 
   if (print){
@@ -118,12 +119,12 @@ uint64_t test_ping(SharedMemoryTestIf *client, GError *error, gboolean print) {
   return ping_time;
 }
 
-uint64_t test_server_alloc(SharedMemoryTestIf *client, GByteArray **res, CallException *exception, GError *error, gboolean print) {
+uint64_t test_server_alloc(RemoteMemoryTestIf *client, GByteArray **res, CallException *exception, GError *error, gboolean print) {
   if (print)
     printf("Testing allocate_mem...\t\t");
   
   uint64_t alloc_start = getns();
-  gboolean success = shared_memory_test_if_allocate_mem(client, res, 4096, &exception, &error);
+  gboolean success = remote_memory_test_if_allocate_mem(client, res, 4096, &exception, &error);
   uint64_t alloc_time = getns() - alloc_start;
 
   if (print) {
@@ -140,7 +141,7 @@ uint64_t test_server_alloc(SharedMemoryTestIf *client, GByteArray **res, CallExc
   return alloc_time;
 }
 
-uint64_t test_server_write(SharedMemoryTestIf *client, GByteArray *res, CallException *exception, GError *error, gboolean print) {
+uint64_t test_server_write(RemoteMemoryTestIf *client, GByteArray *res, CallException *exception, GError *error, gboolean print) {
   if (print)
     printf("Testing write_mem...\t\t");
 
@@ -149,7 +150,7 @@ uint64_t test_server_write(SharedMemoryTestIf *client, GByteArray *res, CallExce
   snprintf(payload, 50, "HELLO WORLD! How are you?");
 
   uint64_t write_start = getns();
-  gboolean success = shared_memory_test_if_write_mem(client, res, payload, &exception, &error);
+  gboolean success = remote_memory_test_if_write_mem(client, res, payload, &exception, &error);
   uint64_t write_time = getns() - write_start;
 
   if (print) {
@@ -167,12 +168,12 @@ uint64_t test_server_write(SharedMemoryTestIf *client, GByteArray *res, CallExce
   return write_time;
 }
 
-uint64_t test_server_read(SharedMemoryTestIf *client, GByteArray *res, CallException *exception, GError *error, gboolean print) {
+uint64_t test_server_read(RemoteMemoryTestIf *client, GByteArray *res, CallException *exception, GError *error, gboolean print) {
   if (print)
     printf("Testing read_mem...\t\t");
   
   uint64_t read_start = getns();
-  gboolean success = shared_memory_test_if_read_mem(client, res, &exception, &error);
+  gboolean success = remote_memory_test_if_read_mem(client, res, &exception, &error);
   uint64_t read_time = getns() - read_start;
 
   if (print) {
@@ -188,12 +189,12 @@ uint64_t test_server_read(SharedMemoryTestIf *client, GByteArray *res, CallExcep
   return read_time;
 }
 
-uint64_t test_server_free(SharedMemoryTestIf *client, GByteArray *res, CallException *exception, GError *error, gboolean print) {
+uint64_t test_server_free(RemoteMemoryTestIf *client, GByteArray *res, CallException *exception, GError *error, gboolean print) {
   if (print)
     printf("Testing free_mem...\t\t");
   
   uint64_t free_start = getns();
-  gboolean success = shared_memory_test_if_free_mem(client, res, &exception, &error);
+  gboolean success = remote_memory_test_if_free_mem(client, res, &exception, &error);
   uint64_t free_time = getns() - free_start;
 
   if (print) {
@@ -209,7 +210,7 @@ uint64_t test_server_free(SharedMemoryTestIf *client, GByteArray *res, CallExcep
   return free_time;
 }
 
-void test_server_functionality(SharedMemoryTestIf *client) {
+void test_server_functionality(RemoteMemoryTestIf *client) {
   GError *error = NULL;
   CallException *exception = NULL;
   GByteArray* res = NULL;
@@ -225,7 +226,7 @@ void test_server_functionality(SharedMemoryTestIf *client) {
   test_server_free(client, res, exception, error, TRUE);
 }
 
-uint64_t test_increment_array(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP, gboolean print) {
+uint64_t test_increment_array(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP, gboolean print) {
   GError *error = NULL;                       // Error (in transport, socket, etc.)
   CallException *exception = NULL;            // Exception (thrown by server)
   struct in6_memaddr args_addr;               // Shared memory address of the argument pointer
@@ -254,7 +255,7 @@ uint64_t test_increment_array(SharedMemoryTestIf *client, struct sockaddr_in6 *t
   marshall_shmem_ptr(&args_ptr, &args_addr);
 
   // CALL RPC
-  shared_memory_test_if_increment_array(client, &result_ptr, args_ptr, incr_val, arr_len, &exception, &error);
+  simple_array_computation_if_increment_array(client, &result_ptr, args_ptr, incr_val, arr_len, &exception, &error);
   if (print) {
     if (error) {
       printf ("ERROR: %s\n", error->message);
@@ -307,7 +308,7 @@ uint64_t test_increment_array(SharedMemoryTestIf *client, struct sockaddr_in6 *t
   return total;
 }
 
-uint64_t test_add_arrays(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP, gboolean print) {
+uint64_t test_add_arrays(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP, gboolean print) {
   GError *error = NULL;                       // Error (in transport, socket, etc.)
   CallException *exception = NULL;            // Exception (thrown by server)
   struct in6_memaddr arg1_addr;               // Shared memory address of the argument pointer
@@ -344,7 +345,7 @@ uint64_t test_add_arrays(SharedMemoryTestIf *client, struct sockaddr_in6 *target
   marshall_shmem_ptr(&arg2_ptr, &arg2_addr);
 
   // CALL RPC
-  shared_memory_test_if_add_arrays(client, &result_ptr, arg1_ptr, arg2_ptr, arrays_len, &exception, &error);
+  simple_array_computation_if_add_arrays(client, &result_ptr, arg1_ptr, arg2_ptr, arrays_len, &exception, &error);
   if (error) {
     printf ("ERROR: %s\n", error->message);
     g_clear_error (&error);
@@ -398,7 +399,7 @@ cleanupres:
   return getns() - start;
 }
 
-void mat_multiply(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP) {
+void mat_multiply(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP) {
   // GError *error = NULL;                       // Error (in transport, socket, etc.)
   // CallException *exception = NULL;            // Exception (thrown by server)
   // struct in6_memaddr args_addr;               // Shared memory address of the argument pointer
@@ -409,7 +410,7 @@ void mat_multiply(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP) {
   THRIFT_UNUSED_VAR(targetIP);
 }
 
-void word_count(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP) {
+void word_count(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP) {
   // GError *error = NULL;                       // Error (in transport, socket, etc.)
   // CallException *exception = NULL;            // Exception (thrown by server)
   // struct in6_memaddr args_addr;               // Shared memory address of the argument pointer
@@ -419,7 +420,7 @@ void word_count(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP) {
   THRIFT_UNUSED_VAR(targetIP);
 }
 
-void sort_array(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP) {
+void sort_array(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP) {
   // GError *error = NULL;                       // Error (in transport, socket, etc.)
   // CallException *exception = NULL;            // Exception (thrown by server)
   // struct in6_memaddr args_addr;               // Shared memory address of the argument pointer
@@ -429,7 +430,7 @@ void sort_array(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP) {
   THRIFT_UNUSED_VAR(targetIP);
 }
 
-uint64_t no_op_rpc(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP) {
+uint64_t no_op_rpc(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP) {
   GError *error = NULL;                       // Error (in transport, socket, etc.)
   struct in6_memaddr args_addr;               // Shared memory address of the argument pointer
   GByteArray* args_ptr = g_byte_array_new();  // Argument pointer
@@ -453,7 +454,7 @@ uint64_t no_op_rpc(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP) {
   marshall_shmem_ptr(&args_ptr, &args_addr);
 
   // CALL RPC
-  shared_memory_test_if_no_op(client, &result_ptr, args_ptr, arr_len, &error);
+  simple_array_computation_if_no_op(client, &result_ptr, args_ptr, arr_len, &error);
 
   // Unmarshall shared pointer address
   struct in6_memaddr result_addr;
@@ -476,7 +477,7 @@ uint64_t no_op_rpc(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP) {
   return getns() - start;
 }
 
-void test_shared_pointer_rpc(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP) {
+void test_shared_pointer_rpc(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP) {
   test_increment_array(client, targetIP, TRUE);
   test_add_arrays(client, targetIP, TRUE);
   // mat_multiply(client, targetIP);
@@ -484,7 +485,7 @@ void test_shared_pointer_rpc(SharedMemoryTestIf *client, struct sockaddr_in6 *ta
   // sort_array(client, targetIP);
 }
 
-void microbenchmark_perf(SharedMemoryTestIf *client, int iterations) {
+void microbenchmark_perf(RemoteMemoryTestIf *client, int iterations) {
   GError *error = NULL;
   CallException *exception = NULL;
 
@@ -532,7 +533,7 @@ void microbenchmark_perf(SharedMemoryTestIf *client, int iterations) {
   free(free_times);
 }
 
-void no_op_perf(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP, int iterations) {
+void no_op_perf(RemoteMemoryTestIf *client, struct sockaddr_in6 *targetIP, int iterations) {
   uint64_t *no_op_rpc_times = malloc(iterations*sizeof(uint64_t));
   uint64_t no_op_rpc_total = 0;
 
@@ -546,7 +547,7 @@ void no_op_perf(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP, int i
   free(no_op_rpc_times);
 }
 
-void increment_array_perf(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP, int iterations) {
+void increment_array_perf(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP, int iterations) {
   uint64_t *increment_array_times = malloc(iterations*sizeof(uint64_t));
   uint64_t increment_array_total = 0;
 
@@ -559,7 +560,7 @@ void increment_array_perf(SharedMemoryTestIf *client, struct sockaddr_in6 *targe
   free(increment_array_times);
 }
 
-void add_arrays_perf(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP, int iterations) {
+void add_arrays_perf(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP, int iterations) {
   uint64_t *add_arrays_times = malloc(iterations*sizeof(uint64_t));
   uint64_t add_arrays_total = 0;
 
@@ -573,27 +574,28 @@ void add_arrays_perf(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP, 
   free(add_arrays_times);
 }
 
-void test_shared_pointer_perf(SharedMemoryTestIf *client, struct sockaddr_in6 *targetIP, int iterations) {
-  microbenchmark_perf(client, iterations);
+void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client, SimpleArrayComputationIf *arrcomp_client, struct sockaddr_in6 *targetIP, int iterations) {
+  microbenchmark_perf(remmem_client, iterations);
 
   // TODO: debug, only the first one of these will work consistently, then the server seg faults
   // on a write_rmem. We might be running out of memory somewhere?
 
   // Call perf test for no-op RPC
-  no_op_perf(client, targetIP, iterations);
+  no_op_perf(arrcomp_client, targetIP, iterations);
 
   // Call perf test for increment array rpc
-  // increment_array_perf(client, targetIP, iterations);
+  // increment_array_perf(arrcomp_client, targetIP, iterations);
 
   // Call perf test for add arrays
-  // add_arrays_perf(client, targetIP, iterations);
+  // add_arrays_perf(arrcomp_client, targetIP, iterations);
 }
 
 int main (int argc, char *argv[]) {
   ThriftUDPSocket *socket;
   ThriftTransport *transport;
   ThriftProtocol *protocol;
-  SharedMemoryTestIf *client;
+  RemoteMemoryTestIf *remmem_client;
+  SimpleArrayComputationIf *arrcomp_client;
 
   GError *error = NULL;
 
@@ -653,25 +655,30 @@ int main (int argc, char *argv[]) {
     return 1;
   }
 
-  client = g_object_new (TYPE_SHARED_MEMORY_TEST_CLIENT,
-                         "input_protocol",  protocol,
-                         "output_protocol", protocol,
-                         NULL);
+  remmem_client = g_object_new (TYPE_REMOTE_MEMORY_TEST_CLIENT,
+                                "input_protocol",  protocol,
+                                "output_protocol", protocol,
+                                NULL);
   
+  arrcomp_client = g_object_new (TYPE_REMOTE_MEMORY_TEST_CLIENT,
+                                 "input_protocol",  protocol,
+                                 "output_protocol", protocol,
+                                 NULL);
 
   printf("\n\n###### Server functionality tests ######\n");
-  test_server_functionality(client);
+  test_server_functionality(remmem_client);
 
   printf("\n####### Shared pointer RPC tests #######\n");
-  test_shared_pointer_rpc(client, targetIP);
+  test_shared_pointer_rpc(arrcomp_client, targetIP);
 
   printf("\n####### Shared pointer performance tests #######\n");
-  test_shared_pointer_perf(client, targetIP, iterations);
+  test_shared_pointer_perf(remmem_client, arrcomp_client, targetIP, iterations);
 
   printf("\n\nCleaning up...\n");
   thrift_transport_close (transport, NULL);
 
-  g_object_unref (client);
+  g_object_unref (remmem_client);
+  g_object_unref (arrcomp_client);
   g_object_unref (protocol);
   g_object_unref (transport);
   g_object_unref (socket);
