@@ -533,7 +533,7 @@ void microbenchmark_perf(RemoteMemoryTestIf *client, int iterations) {
   free(free_times);
 }
 
-void no_op_perf(RemoteMemoryTestIf *client, struct sockaddr_in6 *targetIP, int iterations) {
+void no_op_perf(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP, int iterations) {
   uint64_t *no_op_rpc_times = malloc(iterations*sizeof(uint64_t));
   uint64_t no_op_rpc_total = 0;
 
@@ -591,10 +591,14 @@ void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client, SimpleArrayComp
 }
 
 int main (int argc, char *argv[]) {
-  ThriftUDPSocket *socket;
-  ThriftTransport *transport;
-  ThriftProtocol *protocol;
+  ThriftUDPSocket *remmem_socket;
+  ThriftTransport *remmem_transport;
+  ThriftProtocol *remmem_protocol;
   RemoteMemoryTestIf *remmem_client;
+
+  ThriftUDPSocket *arrcomp_socket;
+  ThriftTransport *arrcomp_transport;
+  ThriftProtocol *arrcomp_protocol;
   SimpleArrayComputationIf *arrcomp_client;
 
   GError *error = NULL;
@@ -637,18 +641,18 @@ int main (int argc, char *argv[]) {
   g_type_init ();
 #endif
 
-  socket    = g_object_new (THRIFT_TYPE_UDP_SOCKET,
+  remmem_socket    = g_object_new (THRIFT_TYPE_UDP_SOCKET,
                             "hostname",  "0:0:102::",
                             "port",      9080,
                             NULL);
-  transport = g_object_new (THRIFT_TYPE_BUFFERED_UDP_TRANSPORT,
-                            "transport", socket,
+  remmem_transport = g_object_new (THRIFT_TYPE_BUFFERED_UDP_TRANSPORT,
+                            "transport", remmem_socket,
                             NULL);
-  protocol  = g_object_new (THRIFT_TYPE_BINARY_PROTOCOL,
-                            "transport", transport,
+  remmem_protocol  = g_object_new (THRIFT_TYPE_BINARY_PROTOCOL,
+                            "transport", remmem_transport,
                             NULL);
 
-  thrift_transport_open (transport, &error);
+  thrift_transport_open (remmem_transport, &error);
   if (error) {
     printf ("ERROR: %s\n", error->message);
     g_clear_error (&error);
@@ -656,13 +660,31 @@ int main (int argc, char *argv[]) {
   }
 
   remmem_client = g_object_new (TYPE_REMOTE_MEMORY_TEST_CLIENT,
-                                "input_protocol",  protocol,
-                                "output_protocol", protocol,
+                                "input_protocol",  remmem_protocol,
+                                "output_protocol", remmem_protocol,
                                 NULL);
   
-  arrcomp_client = g_object_new (TYPE_REMOTE_MEMORY_TEST_CLIENT,
-                                 "input_protocol",  protocol,
-                                 "output_protocol", protocol,
+  arrcomp_socket    = g_object_new (THRIFT_TYPE_UDP_SOCKET,
+                            "hostname",  "0:0:103::",
+                            "port",      9180,
+                            NULL);
+  arrcomp_transport = g_object_new (THRIFT_TYPE_BUFFERED_UDP_TRANSPORT,
+                            "transport", arrcomp_socket,
+                            NULL);
+  arrcomp_protocol  = g_object_new (THRIFT_TYPE_BINARY_PROTOCOL,
+                            "transport", arrcomp_transport,
+                            NULL);
+
+  thrift_transport_open (arrcomp_transport, &error);
+  if (error) {
+    printf ("ERROR: %s\n", error->message);
+    g_clear_error (&error);
+    return 1;
+  }
+
+  arrcomp_client = g_object_new (TYPE_SIMPLE_ARRAY_COMPUTATION_CLIENT,
+                                 "input_protocol",  arrcomp_protocol,
+                                 "output_protocol", arrcomp_protocol,
                                  NULL);
 
   printf("\n\n###### Server functionality tests ######\n");
@@ -675,13 +697,18 @@ int main (int argc, char *argv[]) {
   test_shared_pointer_perf(remmem_client, arrcomp_client, targetIP, iterations);
 
   printf("\n\nCleaning up...\n");
-  thrift_transport_close (transport, NULL);
+  thrift_transport_close (remmem_transport, NULL);
+  thrift_transport_close (arrcomp_transport, NULL);
 
   g_object_unref (remmem_client);
+  g_object_unref (remmem_protocol);
+  g_object_unref (remmem_transport);
+  g_object_unref (remmem_socket);
+
   g_object_unref (arrcomp_client);
-  g_object_unref (protocol);
-  g_object_unref (transport);
-  g_object_unref (socket);
+  g_object_unref (arrcomp_protocol);
+  g_object_unref (arrcomp_transport);
+  g_object_unref (arrcomp_socket);
 
   return 0;
 }

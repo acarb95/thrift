@@ -35,7 +35,6 @@
 #include <thrift/c_glib/transport/thrift_server_transport.h>
 
 #include "gen-c_glib/remote_memory_test.h"
-#include "gen-c_glib/shared_types.h"
 #include "../lib/client_lib.h"
 #include "../lib/config.h"
 #include "../lib/utils.h"

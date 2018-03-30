@@ -35,7 +35,6 @@
 #include <thrift/c_glib/transport/thrift_server_transport.h>
 
 #include "gen-c_glib/simple_array_computation.h"
-#include "gen-c_glib/shared_types.h"
 #include "../lib/client_lib.h"
 #include "../lib/config.h"
 #include "../lib/utils.h"
@@ -525,7 +524,7 @@ int main (int argc, char *argv[])
      listens for client connections */
   server_transport =
     g_object_new (THRIFT_TYPE_SERVER_UDP_SOCKET,
-                  "port", 9080,
+                  "port", 9180,
                   NULL);
 
   /* Create our transport factory, used by the server to wrap "raw"
