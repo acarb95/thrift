@@ -19,6 +19,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #include <thrift/c_glib/thrift.h>
 #include <thrift/c_glib/protocol/thrift_protocol.h>
@@ -65,8 +66,9 @@ thrift_binary_protocol_write_message_begin (ThriftProtocol *protocol,
     return -1;
   }
   xfer += ret;
-
-  if ((ret = thrift_protocol_write_string (protocol, name, error)) < 0)
+  const char pad[16];
+  snprintf(pad, 17, "%16s", name);
+  if ((ret = thrift_protocol_write_string (protocol,(const gchar *) pad, error)) < 0)
   {
     return -1;
   }
@@ -383,7 +385,15 @@ thrift_binary_protocol_write_binary (ThriftProtocol *protocol,
 
   return xfer;
 }
+void trim(char * s) {
+    char * p = s;
+    int l = strlen(p);
 
+    while(isspace(p[l - 1])) p[--l] = 0;
+    while(* p && isspace(* p)) ++p, --l;
+
+    memmove(s, p, l + 1);
+}
 gint32
 thrift_binary_protocol_read_message_begin (ThriftProtocol *protocol,
                                            gchar **name,
@@ -423,7 +433,7 @@ thrift_binary_protocol_read_message_begin (ThriftProtocol *protocol,
       return -1;
     }
     xfer += ret;
-
+    trim(*name);
     if ((ret = thrift_protocol_read_i32 (protocol, seqid, error)) < 0)
     {
       return -1;
