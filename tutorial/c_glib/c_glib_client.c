@@ -248,8 +248,12 @@ uint64_t test_increment_array(SimpleArrayComputationIf *client, struct sockaddr_
   arr = malloc(arr_len*sizeof(uint8_t));
   populate_array(&arr, arr_len, 0, FALSE);
 
+  char temp[BLOCK_SIZE];
+
+  memcpy(temp, arr, arr_len);
+
   // Write array to shared memory
-  write_rmem(targetIP, (char*) arr, &args_addr);
+  write_rmem(targetIP, (char*) temp, &args_addr);
 
   // Marshall shared pointer address
   marshall_shmem_ptr(&args_ptr, &args_addr);
@@ -293,12 +297,12 @@ uint64_t test_increment_array(SimpleArrayComputationIf *client, struct sockaddr_
   }
 
   // Free malloc'd and GByteArray memory
-  free(result_arr);
-  free(arr);
-  free_rmem(targetIP, &args_addr);
-  free_rmem(targetIP, &result_addr);
-  g_byte_array_free(args_ptr, TRUE);  // We allocated this, so we free it
-  g_byte_array_unref(result_ptr);     // We only received this, so we dereference it
+  // free(result_arr);
+  // free(arr);
+  // free_rmem(targetIP, &args_addr);
+  // free_rmem(targetIP, &result_addr);
+  // g_byte_array_free(args_ptr, TRUE);  // We allocated this, so we free it
+  // g_byte_array_unref(result_ptr);     // We only received this, so we dereference it
 
   uint64_t total = getns() - start;
 
@@ -336,9 +340,15 @@ uint64_t test_add_arrays(SimpleArrayComputationIf *client, struct sockaddr_in6 *
   populate_array(&arr1, arrays_len, 3, TRUE);
   populate_array(&arr2, arrays_len, 5, TRUE);
 
+  char temp1[BLOCK_SIZE];
+  char temp2[BLOCK_SIZE];
+
+  memcpy(temp1, arr1, arrays_len);
+  memcpy(temp2, arr2, arrays_len);
+
   // Write arrays to shared memory
-  write_rmem(targetIP, (char*) arr1, &arg1_addr);
-  write_rmem(targetIP, (char*) arr2, &arg2_addr);
+  write_rmem(targetIP, (char*) temp1, &arg1_addr);
+  write_rmem(targetIP, (char*) temp2, &arg2_addr);
 
   // Marshall shared pointer addresses
   marshall_shmem_ptr(&arg1_ptr, &arg1_addr);
@@ -388,13 +398,13 @@ cleanupres:
   }
 
   // Free malloc'd and GByteArray memory
-  free(arr1);
-  free(arr2);
-  free_rmem(targetIP, &arg1_addr);    // Free the shared memory
-  free_rmem(targetIP, &arg2_addr);    // Free the shared memory
-  g_byte_array_free(arg1_ptr, TRUE);  // We allocated this, so we free it
-  g_byte_array_free(arg2_ptr, TRUE);  // We allocated this, so we free it
-  g_byte_array_unref(result_ptr);     // We only received this, so we dereference it
+  // free(arr1);
+  // free(arr2);
+  // free_rmem(targetIP, &arg1_addr);    // Free the shared memory
+  // free_rmem(targetIP, &arg2_addr);    // Free the shared memory
+  // g_byte_array_free(arg1_ptr, TRUE);  // We allocated this, so we free it
+  // g_byte_array_free(arg2_ptr, TRUE);  // We allocated this, so we free it
+  // g_byte_array_unref(result_ptr);     // We only received this, so we dereference it
 
   return getns() - start;
 }
@@ -447,8 +457,11 @@ uint64_t no_op_rpc(SimpleArrayComputationIf *client, struct sockaddr_in6 *target
   arr = malloc(arr_len*sizeof(uint8_t));
   populate_array(&arr, arr_len, 0, FALSE);
 
+  char temp[BLOCK_SIZE];
+  memcpy(temp, arr, arr_len);
+
   // Write array to shared memory
-  write_rmem(targetIP, (char*) arr, &args_addr);
+  write_rmem(targetIP, (char*) temp, &args_addr);
 
   // Marshall shared pointer address
   marshall_shmem_ptr(&args_ptr, &args_addr);
@@ -467,12 +480,12 @@ uint64_t no_op_rpc(SimpleArrayComputationIf *client, struct sockaddr_in6 *target
   get_rmem(result_arr, arr_len, targetIP, &result_addr);
 
   // Free malloc'd and GByteArray memory
-  free(result_arr);
-  free(arr);
-  free_rmem(targetIP, &args_addr);
-  free_rmem(targetIP, &result_addr);
-  g_byte_array_free(args_ptr, TRUE);  // We allocated this, so we free it
-  g_byte_array_unref(result_ptr);     // We only received this, so we dereference it
+  // free(result_arr);
+  // free(arr);
+  // free_rmem(targetIP, &args_addr);
+  // free_rmem(targetIP, &result_addr);
+  // g_byte_array_free(args_ptr, TRUE);  // We allocated this, so we free it
+  // g_byte_array_unref(result_ptr);     // We only received this, so we dereference it
 
   return getns() - start;
 }
@@ -584,10 +597,10 @@ void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client, SimpleArrayComp
   no_op_perf(arrcomp_client, targetIP, iterations);
 
   // Call perf test for increment array rpc
-  // increment_array_perf(arrcomp_client, targetIP, iterations);
+  increment_array_perf(arrcomp_client, targetIP, iterations);
 
   // Call perf test for add arrays
-  // add_arrays_perf(arrcomp_client, targetIP, iterations);
+  add_arrays_perf(arrcomp_client, targetIP, iterations);
 }
 
 int main (int argc, char *argv[]) {

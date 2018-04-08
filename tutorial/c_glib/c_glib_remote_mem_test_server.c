@@ -208,7 +208,7 @@ tutorial_remote_memory_test_handler_read_mem (RemoteMemoryTestIf *iface,
 
   get_rmem(payload, 4096, targetIP, &args_addr);
 
-  // printf("read_mem(): \"%s\"\n", payload);
+  // printf("read_mem()\n");
 
   free(payload);
   return TRUE;
@@ -226,13 +226,21 @@ tutorial_remote_memory_test_handler_write_mem (RemoteMemoryTestIf *iface,
   THRIFT_UNUSED_VAR (error);
   THRIFT_UNUSED_VAR (ouch);
 
-  // printf ("write_mem(%s)\n", message);
+  // printf ("write_mem(): ");
+  // print_n_bytes(pointer->data, pointer->len);
 
   struct in6_memaddr args_addr;
   unmarshall_shmem_ptr(&args_addr, (GByteArray *) pointer);
 
-  write_rmem(targetIP, (char *) message, &args_addr);
+  char temp[BLOCK_SIZE];
 
+  memcpy(temp, message, strlen(message));
+
+  // printf("Calling bluebridge: %s, args_addr: ", message);
+  // print_n_bytes((char*)&args_addr, sizeof(args_addr));
+  write_rmem(targetIP, (char *) temp, &args_addr);
+
+  // printf("write_mem return true\n");
   return TRUE;
 
 }

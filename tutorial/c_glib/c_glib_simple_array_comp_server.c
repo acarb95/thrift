@@ -179,8 +179,12 @@ tutorial_simple_array_computation_handler_increment_array (SimpleArrayComputatio
     int_arr[i] += value;
   }
 
+  char temp[BLOCK_SIZE];
+
+  memcpy(temp, int_arr, length);
+
   // Write it to the array
-  write_rmem(targetIP, (char*) int_arr, &result_addr);
+  write_rmem(targetIP, (char*) temp, &result_addr);
 
   g_byte_array_ref(result_ptr);
 
@@ -243,8 +247,12 @@ tutorial_simple_array_computation_handler_add_arrays (SimpleArrayComputationIf *
   }
 
   // printf("write_rmem\n");
+
+  char temp[BLOCK_SIZE];
+
+  memcpy(temp, result_array, length);
   // Write computation to shared memory
-  write_rmem(targetIP, (char*) result_array, &result_addr);
+  write_rmem(targetIP, (char*) temp, &result_addr);
 
   // printf("increase ref\n");
   g_byte_array_ref(result_ptr);
@@ -257,6 +265,7 @@ tutorial_simple_array_computation_handler_add_arrays (SimpleArrayComputationIf *
   *_return = result_ptr;
 
   free(result_array);
+
   return TRUE;
 
 }
@@ -358,8 +367,12 @@ tutorial_simple_array_computation_handler_no_op (SimpleArrayComputationIf  *ifac
 
   // COMPUTATION
 
+  char temp[BLOCK_SIZE];
+
+  memcpy(temp, int_arr, length);
+
   // Write it to the array
-  write_rmem(targetIP, (char*) int_arr, &result_addr);
+  write_rmem(targetIP, (char*) temp, &result_addr);
 
   g_byte_array_ref(result_ptr);
 
