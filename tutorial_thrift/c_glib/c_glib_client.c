@@ -472,7 +472,7 @@ uint64_t no_op_rpc(SimpleArrayComputationIf *client) {
 void test_shared_pointer_rpc(SimpleArrayComputationIf *client) {
   test_increment_array(client, TRUE);
   test_add_arrays(client, TRUE);
-  mat_multiply(client, TRUE);
+  // mat_multiply(client, TRUE);
   // word_count(client, TRUE);
   // sort_array(client, TRUE);
 }
