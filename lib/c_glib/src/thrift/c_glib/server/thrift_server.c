@@ -140,7 +140,7 @@ thrift_server_class_init (ThriftServerClass *cls)
       PROP_THRIFT_SERVER_SERVER_TRANSPORT,
       g_param_spec_object ("server_transport", "Server Transport",
                            "Thrift Server Transport",
-                           THRIFT_TYPE_SERVER_TRANSPORT,
+                           THRIFT_TYPE_TRANSPORT,
                            G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
   g_object_class_install_property (gobject_class,
       PROP_THRIFT_SERVER_INPUT_TRANSPORT_FACTORY,

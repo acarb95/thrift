@@ -24,15 +24,16 @@
 #include <inttypes.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #include <thrift/c_glib/thrift.h>
 #include <thrift/c_glib/protocol/thrift_binary_protocol_factory.h>
 #include <thrift/c_glib/protocol/thrift_protocol_factory.h>
 #include <thrift/c_glib/server/thrift_server.h>
 #include <thrift/c_glib/server/thrift_simple_server.h>
-#include <thrift/c_glib/transport/thrift_buffered_udp_transport_factory.h>
-#include <thrift/c_glib/transport/thrift_udp_socket.h>
-#include <thrift/c_glib/transport/thrift_buffered_udp_transport.h>
+#include <thrift/c_glib/transport/thrift_buffered_transport_factory.h>
+#include <thrift/c_glib/transport/thrift_server_socket.h>
+#include <thrift/c_glib/transport/thrift_server_transport.h>
 
 #include "gen-c_glib/simple_array_computation.h"
 #include "../lib/client_lib.h"
@@ -100,47 +101,9 @@ GType tutorial_simple_array_computation_handler_get_type (void);
 
 G_END_DECLS
 
-struct sockaddr_in6 *targetIP;
-
 /* ---------------------------------------------------------------- */
 
 /* The implementation of TutorialSimpleArrayComputationHandler follows. */
-
-void get_result_pointer(struct in6_memaddr *ptr) {
-  // Get random memory server
-  struct in6_addr *ipv6Pointer = gen_rdm_ip6_target();
-
-  // Put it's address in targetIP (why?)
-  memcpy(&(targetIP->sin6_addr), ipv6Pointer, sizeof(*ipv6Pointer));
-
-  // Allocate memory and receive the remote memory pointer
-  struct in6_memaddr temp = allocate_rmem(targetIP);
-
-  // Copy the remote memory pointer into the give struct pointer
-  memcpy(ptr, &temp, sizeof(struct in6_memaddr));
-}
-
-void marshall_shmem_ptr(GByteArray **ptr, struct in6_memaddr *addr) {
-  // Blank cmd section
-  uint16_t cmd = 0u;
-
-  // Copy wildcard (::)
-  *ptr = g_byte_array_append(*ptr, (const gpointer) &(addr->wildcard), sizeof(uint32_t));
-  // Copy subid (i.e., 103)
-  *ptr = g_byte_array_append(*ptr, (const gpointer) &(addr->subid), sizeof(uint16_t));
-  // Copy cmd (0)
-  *ptr = g_byte_array_append(*ptr, (const gpointer) &cmd, sizeof(uint16_t));
-  // Copy memory address (XXXX:XXXX)
-  *ptr = g_byte_array_append(*ptr, (const gpointer) &(addr->paddr), sizeof(uint64_t));
-}
-
-void unmarshall_shmem_ptr(struct in6_memaddr *result_addr, GByteArray *result_ptr) {
-  // Clear struct
-  memset(result_addr, 0, sizeof(struct in6_memaddr));
-  // Copy over received bytes
-  memcpy(result_addr, result_ptr->data, sizeof(struct in6_memaddr));
-}
-
 
 G_DEFINE_TYPE (TutorialSimpleArrayComputationHandler,
                tutorial_simple_array_computation_handler,
@@ -148,138 +111,103 @@ G_DEFINE_TYPE (TutorialSimpleArrayComputationHandler,
 
 static gboolean
 tutorial_simple_array_computation_handler_increment_array (SimpleArrayComputationIf *iface,
-                                                     GByteArray        **_return,
-                                                     const GByteArray   *pointer,
-                                                     const gint8         value,
-                                                     const gint32        length,
-                                                     CallException     **ouch,
-                                                     GError            **error) 
+                                                           GArray                  **_return,
+                                                           const GArray             *arr,
+                                                           const gint8               value,
+                                                           const gint32              length,
+                                                           CallException           **ouch,
+                                                           GError                  **error) 
 {
   THRIFT_UNUSED_VAR (iface);
   THRIFT_UNUSED_VAR (error);
   THRIFT_UNUSED_VAR (ouch);
 
-  GByteArray* result_ptr = g_byte_array_new();
-  struct in6_memaddr result_addr;
+  printf("Increment array\n");
 
-  get_result_pointer(&result_addr);
-
-  marshall_shmem_ptr(&result_ptr, &result_addr);
-
-  // Read in array from shared memory
-  uint8_t *int_arr = malloc(length);
-
-  struct in6_memaddr args_addr;
-  unmarshall_shmem_ptr(&args_addr, (GByteArray *) pointer);
-
-  get_rmem((char *) int_arr, length, targetIP, &args_addr);
+  *_return = g_array_sized_new(FALSE, TRUE, sizeof(gint8), length);
+  // result_arr = g_array_append_vals(result_arr, arr, length);
 
   // Increment the values
   for (int i = 0; i < length; i++) {
-    int_arr[i] += value;
+    gint8 val = g_array_index(arr, gint8, i) + value;
+    g_array_append_val(*_return, val);
   }
 
-  // Write it to the array
-  write_rmem(targetIP, (char*) int_arr, &result_addr);
-
-  g_byte_array_ref(result_ptr);
-
-  *_return = result_ptr;
-
-  // printf("increment_array() returning ");
-  // print_n_bytes(result_ptr->data, result_ptr->len);
-
-  free(int_arr);
+  // *_return = result_arr;
   return TRUE;
-
 }
 
 static gboolean
 tutorial_simple_array_computation_handler_add_arrays (SimpleArrayComputationIf *iface,
-                                                GByteArray        **_return,
-                                                const GByteArray   *array1,
-                                                const GByteArray   *array2,
-                                                const gint32        length,
-                                                CallException     **ouch,
-                                                GError            **error)
+                                                      GArray                  **_return,
+                                                      const GArray             *array1,
+                                                      const GArray             *array2,
+                                                      const gint32              length,
+                                                      CallException           **ouch,
+                                                      GError                  **error)
 {
   THRIFT_UNUSED_VAR (iface);
   THRIFT_UNUSED_VAR (error);
   THRIFT_UNUSED_VAR (ouch);
 
-  GByteArray* result_ptr = g_byte_array_new();
-  struct in6_memaddr result_addr;
+  printf("Add arrays\n");
 
-  // printf("Get result pointer\n");
-  get_result_pointer(&result_addr);
+  *_return = g_array_new(FALSE, TRUE, sizeof(gint8));
 
-  // printf("marshall_shmem_ptr\n");
-  marshall_shmem_ptr(&result_ptr, &result_addr);
-  // printf("result pointer: ");
-  // print_n_bytes(result_ptr->data, result_ptr->len);
-
-  // Read in params from shared memory
-  uint8_t *arr1 = malloc(length);
-  uint8_t *arr2 = malloc(length);
-
-  struct in6_memaddr arg1_addr;
-  struct in6_memaddr arg2_addr;
-
-  // printf("unmarshall_shmem_ptr\n");
-  unmarshall_shmem_ptr(&arg1_addr, (GByteArray *) array1);
-  unmarshall_shmem_ptr(&arg2_addr, (GByteArray *) array2);
-
-  // printf("get_rmem\n");
-  get_rmem((char*) arr1, length, targetIP, &arg1_addr);
-  get_rmem((char*) arr2, length, targetIP, &arg2_addr);
-
-  // Create result array
-  uint8_t *result_array = malloc(length);
-
-  // printf("Perform computation\n");
-  // Perform computation
   for (int i = 0; i < length; i++) {
-    result_array[i] = arr1[i] + arr2[i];
+    gint8 val = g_array_index(array1, gint8, i) + g_array_index(array2, gint8, i);
+    g_array_append_val(*_return, val);
   }
 
-  // printf("write_rmem\n");
-  // Write computation to shared memory
-  write_rmem(targetIP, (char*) result_array, &result_addr);
-
-  // printf("increase ref\n");
-  g_byte_array_ref(result_ptr);
-
-  // printf ("add_arrays (%d): \n\t1: ", length);
-  // print_n_bytes(array1->data, array1->len);
-  // printf("\t2: ");
-  // print_n_bytes(array2->data, array2->len);
-
-  *_return = result_ptr;
-
-  free(result_array);
+  // *_return = result_array;
   return TRUE;
+}
 
+static gint8 dot_prod_helper(GArray* x, const GArray* y, int m) {
+  gint8 res = 0;
+
+  for (int i = 0; i < m; i++) {
+    res += g_array_index(x, gint8, i) + g_array_index(y, gint8, i);
+  }
+
+  return res;
 }
 
 static gboolean
 tutorial_simple_array_computation_handler_mat_multiply (SimpleArrayComputationIf *iface,
-                                                  const GByteArray   *array,
-                                                  const GByteArray   *matrix,
-                                                  const gint32        length,
-                                                  const tuple        *dimension,
-                                                  const GByteArray   *result_ptr,
-                                                  CallException     **ouch,
-                                                  GError            **error)
+                                                        GArray                  **_return,
+                                                        const GArray             *array,
+                                                        const GPtrArray          *matrix,
+                                                        const gint32              length,
+                                                        const tuple              *dimension,
+                                                        CallException           **ouch,
+                                                        GError                  **error)
 {
   THRIFT_UNUSED_VAR (iface);
   THRIFT_UNUSED_VAR (error);
-  THRIFT_UNUSED_VAR (ouch);
-  THRIFT_UNUSED_VAR (result_ptr);
 
-  printf ("mat_multiply (length: %d, dimension: %d, %d): \n\tArray: ", length, dimension->n, dimension->m);
-  print_n_bytes(array->data, array->len);
-  printf("\tMatrix: ");
-  print_n_bytes(matrix->data, matrix->len);
+  printf("Matrix multiply\n");
+
+  if (length != dimension->m) {
+
+    ouch = g_object_new(TYPE_CALL_EXCEPTION,
+                        "err_code", 3,
+                        "message", g_strdup_printf("Vector length (%d) does not match matrix columns (%d)", length, dimension->m),
+                        NULL);
+    return FALSE;
+  } else {
+    THRIFT_UNUSED_VAR (ouch);
+  }
+
+  GArray* result_array = g_array_new(FALSE, FALSE, sizeof(gint8));
+
+  for (int i = 0; i < dimension->n; i++) {
+    GArray* row = g_ptr_array_index(matrix, i);
+    gint8 value = dot_prod_helper(row, array, dimension->m);
+    g_array_append_val(result_array, value);
+  }
+
+  *_return = result_array;
 
   return TRUE;
 
@@ -287,45 +215,62 @@ tutorial_simple_array_computation_handler_mat_multiply (SimpleArrayComputationIf
 
 static gboolean
 tutorial_simple_array_computation_handler_word_count (SimpleArrayComputationIf *iface,
-                                                gint32             *_return,
-                                                const GByteArray   *story,
-                                                const gint32        length,
-                                                CallException     **ouch,
-                                                GError            **error)
+                                                      gint32                   *_return,
+                                                      const gchar              *story,
+                                                      const gint32              length,
+                                                      CallException           **ouch,
+                                                      GError                  **error)
 {
   THRIFT_UNUSED_VAR (iface);
   THRIFT_UNUSED_VAR (error);
   THRIFT_UNUSED_VAR (ouch);
+  gint32 wordcount = 0;
+  char prev = ' '; // Start out with blank prev char.
 
-  *_return = -1;
+  for (int i = 0; i < length; i++) {
+    if (isspace(story[i]) && isgraph(prev)) {
+      wordcount++;
+    }
+    prev = story[i];
+  } 
+
+  *_return = wordcount;
 
   printf("word_count (%d): ", length);
-  print_n_bytes(story->data, story->len);
+  // print_n_bytes(story->data, story->len);
 
   return TRUE;
 
 }
 
+static int my_int_sort_function (gconstpointer a, gconstpointer b)
+{
+    int int_a = GPOINTER_TO_INT (a);
+    int int_b = GPOINTER_TO_INT (b);
+
+    return int_a - int_b;
+}
+
 static gboolean
 tutorial_simple_array_computation_handler_sort_array (SimpleArrayComputationIf *iface,
-                                                GByteArray        **_return,
-                                                const GByteArray   *num_array,
-                                                const gint32        length,
-                                                CallException     **ouch,
-                                                GError            **error)
+                                                      GArray                  **_return,
+                                                      const GArray             *num_array,
+                                                      const gint32              length,
+                                                      CallException           **ouch,
+                                                      GError                  **error)
 {
   THRIFT_UNUSED_VAR (iface);
   THRIFT_UNUSED_VAR (error);
   THRIFT_UNUSED_VAR (ouch);
 
-  GByteArray* res = g_byte_array_new();
-
-  g_byte_array_ref(res);
+  GArray* res = g_array_sized_new(FALSE, TRUE, sizeof(gint8), length);
+  res = g_array_append_vals(res, num_array->data, length);
+  g_array_sort(res, my_int_sort_function);
 
   *_return = res;
 
-  printf("sort_array(%d): ", length);
-  print_n_bytes(num_array->data, num_array->len);
+  // printf("sort_array(%d): ", length);
+  // print_n_bytes(num_array->data, num_array->len);
 
   return TRUE;
 
@@ -333,42 +278,24 @@ tutorial_simple_array_computation_handler_sort_array (SimpleArrayComputationIf *
 
 static gboolean
 tutorial_simple_array_computation_handler_no_op (SimpleArrayComputationIf  *iface,
-                                           GByteArray         **_return,
-                                           const GByteArray    *num_array,
-                                           const gint32         length,
-                                           GError             **error)
+                                                 GArray                   **_return,
+                                                 const GArray              *num_array,
+                                                 const gint32               length,
+                                                 GError                   **error)
 {
   THRIFT_UNUSED_VAR (iface);
   THRIFT_UNUSED_VAR (error);
 
-  GByteArray* result_ptr = g_byte_array_new();
-  struct in6_memaddr result_addr;
+  GArray* result_array = g_array_sized_new(FALSE, TRUE, sizeof(gint8), length);
 
-  get_result_pointer(&result_addr);
+  result_array = g_array_append_vals(result_array, num_array->data, length);
 
-  marshall_shmem_ptr(&result_ptr, &result_addr);
-
-  // Read in array from shared memory
-  uint8_t *int_arr = malloc(length);
-
-  struct in6_memaddr args_addr;
-  unmarshall_shmem_ptr(&args_addr, (GByteArray *) num_array);
-
-  get_rmem((char *) int_arr, length, targetIP, &args_addr);
-
-  // COMPUTATION
-
-  // Write it to the array
-  write_rmem(targetIP, (char*) int_arr, &result_addr);
-
-  g_byte_array_ref(result_ptr);
-
-  *_return = result_ptr;
+  *_return = result_array;
 
   // printf("no_op() returning ");
   // print_n_bytes(result_ptr->data, result_ptr->len);
 
-  free(int_arr);
+  // free(int_arr);
   return TRUE;
 
 }
@@ -459,40 +386,23 @@ sigint_handler (int signal_number)
 
 int main (int argc, char *argv[])
 {
-  if (argc < 3) {
+  THRIFT_UNUSED_VAR(argv);
+
+  if (argc > 1) {
     printf("usage\n");
     return -1;
   }
-  int c; 
-  struct config myConf;
-  while ((c = getopt (argc, argv, "c:")) != -1) { 
-  switch (c) 
-    { 
-    case 'c':
-      myConf = set_bb_config(optarg, 0);
-      break;
-    case '?': 
-        fprintf (stderr, "Unknown option `-%c'.\n", optopt);
-        printf("usage: -c config\n");
-      return 1; 
-    default:
-      printf("usage\n");
-      return -1;
-    } 
-  } 
-  targetIP = init_sockets(&myConf, 0);
-  set_host_list(myConf.hosts, myConf.num_hosts);
 
   TutorialSimpleArrayComputationHandler *handler;
   SimpleArrayComputationProcessor *processor;
 
-  ThriftTransport *server_transport;
+  ThriftServerTransport *server_transport;
   ThriftTransportFactory *transport_factory;
   ThriftProtocolFactory *protocol_factory;
 
   struct sigaction sigint_action;
 
-  GError *error = NULL;
+  GError *error;
   int exit_status = 0;
 
 #if (!GLIB_CHECK_VERSION (2, 36, 0))
@@ -516,16 +426,15 @@ int main (int argc, char *argv[])
   /* Create our server socket, which binds to the specified port and
      listens for client connections */
   server_transport =
-    g_object_new (THRIFT_TYPE_UDP_SOCKET,
-                  "listen_port", 9180,
-                  "server", TRUE,
+    g_object_new (THRIFT_TYPE_SERVER_SOCKET,
+                  "port", 9280,
                   NULL);
 
   /* Create our transport factory, used by the server to wrap "raw"
      incoming connections from the client (in this case with a
      ThriftBufferedUDPTransport to improve performance) */
   transport_factory =
-    g_object_new (THRIFT_TYPE_BUFFERED_UDP_TRANSPORT_FACTORY,
+    g_object_new (THRIFT_TYPE_BUFFERED_TRANSPORT_FACTORY,
                   NULL);
 
   /* Create our protocol factory, which determines which wire protocol
@@ -545,17 +454,6 @@ int main (int argc, char *argv[])
                   "output_protocol_factory",  protocol_factory,
                   NULL);
 
-  printf("Calling open on transport\n");
-  // Open our socket so we can use it
-  thrift_transport_open (server_transport, &error);
-  printf("checking error\n");
-  if (error != NULL) {
-    printf ("ERROR: %s\n", error->message);
-    g_clear_error (&error);
-    return 1;
-  }
-  printf("memset\n");
-
   /* Install our SIGINT handler, which handles Ctrl-C being pressed by
      stopping the server gracefully (not strictly necessary, but a
      nice touch) */
@@ -566,7 +464,7 @@ int main (int argc, char *argv[])
 
   /* Start the server, which will run until its stop method is invoked
      (from within the SIGINT handler, in this case) */
-  printf ("Starting the server...\n");
+  puts ("Starting the server...");
   thrift_server_serve (server, &error);
 
   /* If the server stopped for any reason other than having been
@@ -577,7 +475,7 @@ int main (int argc, char *argv[])
     g_clear_error (&error);
   }
 
-  printf("done.\n");
+  puts ("done.");
 
   g_object_unref (server);
   g_object_unref (transport_factory);

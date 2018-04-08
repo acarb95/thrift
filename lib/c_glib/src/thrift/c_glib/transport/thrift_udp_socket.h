@@ -60,6 +60,7 @@ struct _ThriftUDPSocket
 #endif
   socklen_t conn_size;            // The size of our sockaddr connection (either sizeof(sockaddr_in) or sizeof(sockaddr_in6))
   gshort port;                    // The port this socket was initialized to connect to (TCP legacy)
+  gshort listen_port;                    // The port this socket was initialized to connect to (TCP legacy)
   gboolean server;                // Determines if this socket was created by a client or server
   int sd;                         // The socket descriptor
   guint8 *buf;                    // Unused

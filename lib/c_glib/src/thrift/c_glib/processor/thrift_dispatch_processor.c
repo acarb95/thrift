@@ -37,6 +37,7 @@ thrift_dispatch_processor_process (ThriftProcessor *processor,
   ThriftDispatchProcessor *dispatch_processor =
     THRIFT_DISPATCH_PROCESSOR (processor);
 
+  // g_message("reading message");
   /* Read the start of the message, which we expect to be a method call */
   if (thrift_protocol_read_message_begin (in,
                                           &fname,
@@ -53,6 +54,7 @@ thrift_dispatch_processor_process (ThriftProcessor *processor,
     return FALSE;
   }
 
+  // g_message("dispatching call");
   /* Dispatch the method call */
   return THRIFT_DISPATCH_PROCESSOR_GET_CLASS (dispatch_processor)
     ->dispatch_call (dispatch_processor,

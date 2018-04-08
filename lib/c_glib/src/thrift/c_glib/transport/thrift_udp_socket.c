@@ -38,7 +38,8 @@ enum _ThriftUDPSocketProperties
   PROP_0,
   PROP_THRIFT_UDP_SOCKET_HOSTNAME,
   PROP_THRIFT_UDP_SOCKET_PORT, 
-  PROP_THRIFT_UDP_SOCKET_SERVER
+  PROP_THRIFT_UDP_SOCKET_SERVER,
+  PROP_THRIFT_UDP_SOCKET_LISTEN_PORT
 };
 
 /* for errors coming from socket() and connect() */
@@ -71,8 +72,10 @@ thrift_udp_socket_peek (ThriftTransport *transport, GError **error)
 
   ThriftUDPSocket *socket = THRIFT_UDP_SOCKET (transport);
 
+  // g_message("Checking if socket open\n");
   if (thrift_udp_socket_is_open (transport))
   {
+    // g_message("Attempting to recvfrom with peek\n");
     // Attempt to recvfrom the socket (this will block until data exists)
     r = recvfrom (socket->sd, &buf, 1, MSG_PEEK, (struct sockaddr *) &src_addr, &srcaddrlen);
     if (r == -1)
@@ -113,11 +116,14 @@ thrift_udp_socket_peek (ThriftTransport *transport, GError **error)
 gboolean
 thrift_udp_socket_open (ThriftTransport *transport, GError **error)
 {
+  int enabled = 1;
 #if defined(USE_IPV6)
   struct sockaddr_in6 pin;
+  struct sockaddr_in6 serveraddr;
   sa_family_t fam = AF_INET6;
 #else
   struct sockaddr_in pin;
+  struct sockaddr_in serveraddr;
   sa_family_t fam = AF_INET;
 #endif
   struct sockaddr_storage result;
@@ -127,27 +133,6 @@ thrift_udp_socket_open (ThriftTransport *transport, GError **error)
   ThriftUDPSocket *tsocket = THRIFT_UDP_SOCKET (transport);
 
   g_return_val_if_fail (tsocket->sd == THRIFT_INVALID_SOCKET, FALSE);
-
-  memset (&pin, 0, sizeof(pin));
-  memset(&hints, 0, sizeof(struct addrinfo));
-  
-  hints.ai_family = fam;
-  hints.ai_socktype = SOCK_DGRAM;
-
-  getaddrinfo(tsocket->hostname, NULL, &hints, &res);
-
-  memcpy(&result, res->ai_addr, res->ai_addrlen);
-
-  // create a socket structure
-#if defined(USE_IPV6)
-  pin.sin6_addr = ((struct sockaddr_in6*) &result)->sin6_addr;
-  pin.sin6_family = fam;
-  pin.sin6_port = htons(tsocket->port); 
-#else
-  pin.sin_addr.s_addr = ((struct sockaddr_in*) &result)->sin_addr.s_addr;
-  pin.sin_family = fam;
-  pin.sin_port = htons(tsocket->port);
-#endif
 
   // create the socket
   if ((tsocket->sd = socket (fam, SOCK_DGRAM, 0)) == -1)
@@ -160,26 +145,67 @@ thrift_udp_socket_open (ThriftTransport *transport, GError **error)
   }
 
   if (!tsocket->server) {
-    // Client socket initiates a handshake message
-    gint32 val = 3;
 
-    // Set the destination info to the server
+    g_message("Creating CLIENT socket");
+    memset (&pin, 0, sizeof(pin));
+    memset(&hints, 0, sizeof(struct addrinfo));
+    
+    hints.ai_family = fam;
+    hints.ai_socktype = SOCK_DGRAM;
+
+    getaddrinfo(tsocket->hostname, NULL, &hints, &res);
+
+    memcpy(&result, res->ai_addr, res->ai_addrlen);
+
+    // create a socket structure
+#if defined(USE_IPV6)
+    pin.sin6_addr = ((struct sockaddr_in6*) &result)->sin6_addr;
+    pin.sin6_family = fam;
+    pin.sin6_port = htons(tsocket->port); 
+#else
+    pin.sin_addr.s_addr = ((struct sockaddr_in*) &result)->sin_addr.s_addr;
+    pin.sin_family = fam;
+    pin.sin_port = htons(tsocket->port);
+#endif
     memcpy(tsocket->conn_sock, &pin, sizeof(pin));
     tsocket->conn_size = sizeof(pin);
-    // Send dummy message to server (start handshake)
-    THRIFT_TRANSPORT_GET_CLASS(transport)->write(transport, (const gpointer) &val, 1, error);
 
-    // Reset the destination info (so we can load the new server socket info)
-    memset(tsocket->conn_sock, 0, tsocket->conn_size);
-
-    // Waiting for response from the new server socket
-    THRIFT_TRANSPORT_GET_CLASS(transport)->read(transport, (const gpointer) &val, 1, error);
   } else {
-    // Server socket, set the client info as destination socket
-    memcpy(tsocket->conn_sock, &pin, sizeof(pin));
-    tsocket->conn_size = sizeof(pin);
+    // g_message("Setting socket option");
+    // Set the address to reusable so you don't have to wait after restarting
+    if (setsockopt(tsocket->sd, SOL_SOCKET, SO_REUSEADDR, &enabled,
+                   sizeof(enabled)) == -1) {
+      g_set_error (error, THRIFT_TRANSPORT_ERROR,
+                   THRIFT_TRANSPORT_ERROR_SOCKET,
+                   "unable to set SO_REUSEADDR - %s", strerror(errno));
+      return FALSE;
+    }
+
+    // g_message("Creating server socket (%d)", tsocket->sd);
+    memset (&serveraddr, 0, sizeof(serveraddr));
+
+    // g_message("Setting values with listen port: %d", tsocket->listen_port);
+#if defined(USE_IPV6)
+    serveraddr.sin6_addr = in6addr_any;
+    serveraddr.sin6_family = fam;
+    serveraddr.sin6_port = htons(tsocket->listen_port);
+#else
+    serveraddr.sin_addr.s_addr = INADDR_ANY;
+    serveraddr.sin_family = fam;
+    serveraddr.sin_port = htons(tsocket->listen_port);
+#endif
+    // g_message("Attempting to bind with size %d, fam: %d.", sizeof(serveraddr), serveraddr.sin6_family);
+    // Bind to specified listen port
+    if(bind(tsocket->sd, (struct sockaddr*) &serveraddr, sizeof(serveraddr)) < 0){
+      g_set_error(error, THRIFT_TRANSPORT_ERROR, THRIFT_TRANSPORT_ERROR_SOCKET,
+                  "failed to bind to server socket to port %d - %s",
+                  tsocket->listen_port,
+                  strerror(errno));
+      return FALSE;
+    }
   }
 
+  g_message("returning true");
   return TRUE;
 }
 
@@ -189,32 +215,32 @@ thrift_udp_socket_close (ThriftTransport *transport, GError **error)
 {
   ThriftUDPSocket *socket = THRIFT_UDP_SOCKET (transport);
 
-  // If this is not a server socket, we need to notify the server we are closing
-  if (!THRIFT_UDP_SOCKET(transport)->server) {
-    // NOTE: this is reliant on the binary_protocol, which violates the abstraction
-    // layers thrift is built upon. It is just a hack to make things work.
+  // // If this is not a server socket, we need to notify the server we are closing
+  // if (!THRIFT_UDP_SOCKET(transport)->server) {
+  //   // NOTE: this is reliant on the binary_protocol, which violates the abstraction
+  //   // layers thrift is built upon. It is just a hack to make things work.
 
-    // Create close command (T_CLOSE)
-    gint32 version = (THRIFT_BINARY_PROTOCOL_VERSION_1)
-                     | ((gint32) T_CLOSE);
-    gchar *name = "";
-    gint32 len = 0;
-    gint32 seqid = 0;
+  //   // Create close command (T_CLOSE)
+  //   gint32 version = (THRIFT_BINARY_PROTOCOL_VERSION_1)
+  //                    | ((gint32) T_CLOSE);
+  //   gchar *name = "";
+  //   gint32 len = 0;
+  //   gint32 seqid = 0;
 
-    GByteArray* buf = g_byte_array_new();
+  //   GByteArray* buf = g_byte_array_new();
 
-    // Construct the message
-    buf = g_byte_array_append(buf, (const gpointer) &version, 4);
-    buf = g_byte_array_append(buf, (const gpointer) &len, 4);
-    buf = g_byte_array_append(buf, (const gpointer) name, len);
-    buf = g_byte_array_append(buf, (const gpointer) &seqid, 4);
+  //   // Construct the message
+  //   buf = g_byte_array_append(buf, (const gpointer) &version, 4);
+  //   buf = g_byte_array_append(buf, (const gpointer) &len, 4);
+  //   buf = g_byte_array_append(buf, (const gpointer) name, len);
+  //   buf = g_byte_array_append(buf, (const gpointer) &seqid, 4);
 
-    // Write the message
-    THRIFT_TRANSPORT_GET_CLASS(transport)->write(transport, buf->data, buf->len, error);
+  //   // Write the message
+  //   THRIFT_TRANSPORT_GET_CLASS(transport)->write(transport, buf->data, buf->len, error);
 
-    // Free the message
-    g_byte_array_free(buf, TRUE);
-  }
+  //   // Free the message
+  //   g_byte_array_free(buf, TRUE);
+  // }
 
   if (close (socket->sd) == -1)
   {
@@ -263,6 +289,7 @@ thrift_udp_socket_read (ThriftTransport *transport, gpointer buf,
   message.msg_controllen = 0;
 
   // Receive the entire message from the socket
+  // g_message("Call recvmsg");
   ret = recvmsg (socket->sd, &message, 0);
   if (ret <= 0)
   {
@@ -276,11 +303,16 @@ thrift_udp_socket_read (ThriftTransport *transport, gpointer buf,
   // Copy the message into the buffer (which will be copied into the transport read buffer)
   memcpy(buf, buffer, (got < len) ? got : len);
 
+  // g_message("Got back %d, wanted: %d", got, len);
+  // print_n_bytes(buffer, got);
+
   // If our destination socket is not set, we should set it to whatever socket sent this info
-  if (((struct sockaddr*) socket->conn_sock)->sa_family == 0) {
+  // g_message("family: %d", ((struct sockaddr*) socket->conn_sock)->sa_family);
+  // if (((struct sockaddr*) socket->conn_sock)->sa_family == 0) {
+    // g_message("Setting connection socket");
     memcpy(socket->conn_sock, &src_addr, addrlen);
     socket->conn_size = addrlen;
-  }
+  // }
 
   // Return the TOTAL message size
   return got;
@@ -316,6 +348,9 @@ thrift_udp_socket_write (ThriftTransport *transport, const gpointer buf,
 
   while (sent < len)
   {
+    // printf("Sending to: ");
+    // print_n_bytes(socket->conn_sock->sin6_addr, 16);
+    // printf("len: %d, sd: %d\n", len - sent, socket->sd);
     // Send to the destination sock (an object variable of the socket)
     ret = sendto (socket->sd, buf + sent, len - sent, 0, (struct sockaddr *) socket->conn_sock, socket->conn_size);
     if (ret < 0)
@@ -413,6 +448,9 @@ thrift_udp_socket_get_property (GObject *object, guint property_id,
     case PROP_THRIFT_UDP_SOCKET_SERVER:
       g_value_set_boolean (value, socket->server);
       break;
+    case PROP_THRIFT_UDP_SOCKET_LISTEN_PORT:
+      g_value_set_uint (value, socket->listen_port);
+      break;
   }
 }
 
@@ -434,6 +472,9 @@ thrift_udp_socket_set_property (GObject *object, guint property_id,
       break;
     case PROP_THRIFT_UDP_SOCKET_SERVER:
       socket->server = g_value_get_boolean(value);
+      break;
+    case PROP_THRIFT_UDP_SOCKET_LISTEN_PORT:
+      socket->listen_port = g_value_get_uint(value);
       break;
   }
 }
@@ -467,6 +508,17 @@ thrift_udp_socket_class_init (ThriftUDPSocketClass *cls)
                                   G_PARAM_CONSTRUCT_ONLY |
                                   G_PARAM_READWRITE);
   g_object_class_install_property (gobject_class, PROP_THRIFT_UDP_SOCKET_PORT,
+                                   param_spec);
+
+  param_spec = g_param_spec_uint ("listen_port",
+                                  "port (construct)",
+                                  "Set the listen port of the local host",
+                                  0, /* min */
+                                  65534, /* max */
+                                  9090, /* default by convention */
+                                  G_PARAM_CONSTRUCT_ONLY |
+                                  G_PARAM_READWRITE);
+  g_object_class_install_property (gobject_class, PROP_THRIFT_UDP_SOCKET_LISTEN_PORT,
                                    param_spec);
 
   param_spec = g_param_spec_boolean ("server",

@@ -413,6 +413,8 @@ thrift_binary_protocol_read_message_begin (ThriftProtocol *protocol,
   }
   xfer += ret;
 
+  // g_message("thrift_binary_protocol_read_message_begin: after");
+
   if (sz < 0)
   {
     /* check for version */
@@ -758,6 +760,7 @@ thrift_binary_protocol_read_string (ThriftProtocol *protocol,
   gint32 read_len = 0;
 
   /* read the length into read_len */
+  // g_message("read length of string");
   if ((ret =
        thrift_protocol_read_i32 (protocol, &read_len, error)) < 0)
   {
@@ -770,6 +773,7 @@ thrift_binary_protocol_read_string (ThriftProtocol *protocol,
     /* allocate the memory for the string */
     len = (guint32) read_len + 1; // space for null terminator
     *str = g_new0 (gchar, len);
+    // g_message("read string");
     if ((ret =
          thrift_transport_read (protocol->transport,
                                 *str, read_len, error)) < 0)

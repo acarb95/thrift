@@ -86,6 +86,8 @@ thrift_buffered_udp_transport_read_slow (ThriftTransport *transport, gpointer bu
   // We shouldn't hit this unless the buffer doesn't have enough to read
   assert (t->r_buf->len < want);
 
+  // g_message("Calling read slow, want: %d, have: %d", want, have);
+
   if (have > 0)
   {
     // First copy what we have in our buffer.

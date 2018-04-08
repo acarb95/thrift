@@ -643,6 +643,9 @@ AC_CONFIG_FILES([
   tutorial/Makefile
   tutorial/c_glib/Makefile
   tutorial/cpp/Makefile
+  tutorial_thrift/Makefile
+  tutorial_thrift/c_glib/Makefile
+  tutorial_thrift/cpp/Makefile
 ])
 # lib/csharp/Makefile
 # lib/d/Makefile

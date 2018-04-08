@@ -17,41 +17,42 @@
 # under the License.
 #
 
-ACLOCAL_AMFLAGS = -I ./aclocal
+SUBDIRS =
 
-SUBDIRS = compiler/cpp lib
+if MINGW
+# do nothing, just build the compiler
+else
 
-if WITH_TESTS
-SUBDIRS += test
+if WITH_C_GLIB
+SUBDIRS += c_glib
 endif
 
-if WITH_TUTORIAL
-SUBDIRS += tutorial
-SUBDIRS += tutorial_thrift
+if WITH_CPP
+SUBDIRS += cpp
 endif
 
-dist-hook:
-	find $(distdir) -type f \( -iname ".DS_Store" -or -iname "._*" -or -iname ".gitignore" \) | xargs rm -rf
-	find $(distdir) -type d \( -iname ".deps" -or -iname ".libs" \) | xargs rm -rf
-	find $(distdir) -type d \( -iname ".svn" -or -iname ".git" \) | xargs rm -rf
+#
+# generate html for ThriftTest.thrift
+#
+all-local:
+	$(top_builddir)/compiler/cpp/thrift --gen html -r $(top_srcdir)/tutorial_thrift/SimpleArrayComputation.thrift
+	$(top_builddir)/compiler/cpp/thrift --gen html -r $(top_srcdir)/tutorial_thrift/RemoteMemoryTest.thrift
+endif
 
-print-version:
-	@echo $(VERSION)
-
-
-cross: check
-	sh test/test.sh
-
+# Any folders or files not listed above being added to SUBDIR need to be placed here in
+# EXTRA_DIST to be included in the release
 EXTRA_DIST = \
-	.travis.yml \
-	bower.json \
-	composer.json \
-	contrib \
-	debian \
-	doc \
-	doap.rdf \
-	sonar-project.properties \
-	LICENSE \
-	CHANGES \
-	NOTICE \
+	RemoteMemoryTest.thrift \
+	SimpleArrayComputation.thrift \
+	shared.thrift \
 	README.md
+
+# as3
+# csharp
+# d
+# delphi
+# erl
+# hs
+# ocaml
+# perl
+# php

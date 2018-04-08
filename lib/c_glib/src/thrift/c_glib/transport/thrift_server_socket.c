@@ -64,14 +64,14 @@ thrift_server_socket_listen (ThriftServerTransport *transport, GError **error)
   pin.sin6_family = AF_INET6;
   pin.sin6_addr = in6addr_any;
   pin.sin6_port = htons(tsocket->port);
-  /* create a socket */ // TODO: change to SOCK_DGRAM, IPPROTO_UDP
-  if ((tsocket->sd = socket (AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) == -1)
+  /* create a socket */
+  if ((tsocket->sd = socket (AF_INET6, SOCK_STREAM, 0)) == -1)
 #else
   pin.sin_family = AF_INET;
   pin.sin_addr.s_addr = INADDR_ANY;
   pin.sin_port = htons(tsocket->port);
-  /* create a socket */ // TODO: change to SOCK_DGRAM, IPPROTO_UDP
-  if ((tsocket->sd = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
+  /* create a socket */
+  if ((tsocket->sd = socket (AF_INET, SOCK_STREAM, 0)) == -1)
 #endif
   {
     g_set_error (error, THRIFT_SERVER_SOCKET_ERROR,
