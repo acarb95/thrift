@@ -30,7 +30,7 @@
 #include <thrift/c_glib/protocol/thrift_binary_protocol_factory.h>
 #include <thrift/c_glib/protocol/thrift_protocol_factory.h>
 #include <thrift/c_glib/server/thrift_server.h>
-#include <thrift/c_glib/server/thrift_simple_udp_server.h>
+#include <thrift/c_glib/server/thrift_simple_server.h>
 #include <thrift/c_glib/transport/thrift_buffered_transport_factory.h>
 #include <thrift/c_glib/transport/thrift_server_socket.h>
 #include <thrift/c_glib/transport/thrift_server_transport.h>
@@ -445,9 +445,9 @@ int main (int argc, char *argv[])
 
   /* Create the server itself */
   server =
-    g_object_new (THRIFT_TYPE_SIMPLE_UDP_SERVER,
+    g_object_new (THRIFT_TYPE_SIMPLE_SERVER,
                   "processor",                processor,
-                  "server_udp_transport",         server_transport,
+                  "server_transport",         server_transport,
                   "input_transport_factory",  transport_factory,
                   "output_transport_factory", transport_factory,
                   "input_protocol_factory",   protocol_factory,
