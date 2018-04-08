@@ -26,6 +26,7 @@ enum _ThriftServerProperties
   PROP_0,
   PROP_THRIFT_SERVER_PROCESSOR,
   PROP_THRIFT_SERVER_SERVER_TRANSPORT,
+  PROP_THRIFT_SERVER_SERVER_UDP_TRANSPORT,
   PROP_THRIFT_SERVER_INPUT_TRANSPORT_FACTORY,
   PROP_THRIFT_SERVER_OUTPUT_TRANSPORT_FACTORY,
   PROP_THRIFT_SERVER_INPUT_PROTOCOL_FACTORY,
@@ -49,6 +50,9 @@ thrift_server_get_property (GObject *object, guint property_id,
       break;
     case PROP_THRIFT_SERVER_SERVER_TRANSPORT:
       g_value_set_object (value, server->server_transport);
+      break;
+    case PROP_THRIFT_SERVER_SERVER_UDP_TRANSPORT:
+      g_value_set_object (value, server->server_udp_transport);
       break;
     case PROP_THRIFT_SERVER_INPUT_TRANSPORT_FACTORY:
       g_value_set_object (value, server->input_transport_factory);
@@ -80,6 +84,9 @@ thrift_server_set_property (GObject *object, guint property_id,
       break;
     case PROP_THRIFT_SERVER_SERVER_TRANSPORT:
       server->server_transport = g_value_get_object (value);
+      break;
+    case PROP_THRIFT_SERVER_SERVER_UDP_TRANSPORT:
+      server->server_udp_transport = g_value_get_object (value);
       break;
     case PROP_THRIFT_SERVER_INPUT_TRANSPORT_FACTORY:
       server->input_transport_factory = g_value_get_object (value);
@@ -114,6 +121,7 @@ thrift_server_init (ThriftServer *server)
 {
   server->processor = NULL;
   server->server_transport = NULL;
+  server->server_udp_transport = NULL;
   server->input_transport_factory = NULL;
   server->output_transport_factory = NULL;
   server->input_protocol_factory = NULL;
@@ -140,8 +148,15 @@ thrift_server_class_init (ThriftServerClass *cls)
       PROP_THRIFT_SERVER_SERVER_TRANSPORT,
       g_param_spec_object ("server_transport", "Server Transport",
                            "Thrift Server Transport",
+                           THRIFT_TYPE_SERVER_TRANSPORT,
+                           G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+  g_object_class_install_property (gobject_class,
+      PROP_THRIFT_SERVER_SERVER_UDP_TRANSPORT,
+      g_param_spec_object ("server_udp_transport", "Server UDP Transport",
+                           "Thrift Server Transport",
                            THRIFT_TYPE_TRANSPORT,
                            G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
   g_object_class_install_property (gobject_class,
       PROP_THRIFT_SERVER_INPUT_TRANSPORT_FACTORY,
       g_param_spec_object ("input_transport_factory", "Input Transport Factory",

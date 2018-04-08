@@ -52,7 +52,8 @@ struct _ThriftServer
 
   /* protected */
   ThriftProcessor *processor;
-  ThriftTransport *server_transport;
+  ThriftServerTransport *server_transport;
+  ThriftTransport *server_udp_transport;
   ThriftTransportFactory *input_transport_factory;
   ThriftTransportFactory *output_transport_factory;
   ThriftProtocolFactory *input_protocol_factory;

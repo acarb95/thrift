@@ -35,39 +35,56 @@ thrift_simple_server_serve (ThriftServer *server, GError **error)
   ThriftSimpleServer *tss = THRIFT_SIMPLE_SERVER(server);
   GError *process_error = NULL;
 
-  while (thrift_transport_peek (server->server_transport, error)) {
-    input_transport =
-      THRIFT_TRANSPORT_FACTORY_GET_CLASS (server->input_transport_factory)
-      ->get_transport (server->input_transport_factory, THRIFT_TRANSPORT(server->server_transport));
-    output_transport =
-      THRIFT_TRANSPORT_FACTORY_GET_CLASS (server->output_transport_factory)
-      ->get_transport (server->output_transport_factory, THRIFT_TRANSPORT(server->server_transport));
-    input_protocol =
-      THRIFT_PROTOCOL_FACTORY_GET_CLASS (server->input_protocol_factory)
-      ->get_protocol (server->input_protocol_factory, input_transport);
-    output_protocol =
-      THRIFT_PROTOCOL_FACTORY_GET_CLASS (server->output_protocol_factory)
-      ->get_protocol (server->output_protocol_factory, output_transport);
-
-    // g_message("Process packet");
-    THRIFT_PROCESSOR_GET_CLASS (server->processor)
-           ->process (server->processor,
-                      input_protocol,
-                      output_protocol,
-                      &process_error);
-    if (process_error != NULL)
+  if (thrift_server_transport_listen (server->server_transport, error)) {
+    tss->running = TRUE;
+    while (tss->running == TRUE)
     {
-      g_message ("thrift_simple_server_serve: %s", process_error->message);
-      g_clear_error (&process_error);
+      t = thrift_server_transport_accept (server->server_transport,
+                                          error);
+      if (t != NULL && tss->running) {
+        input_transport =
+          THRIFT_TRANSPORT_FACTORY_GET_CLASS (server->input_transport_factory)
+          ->get_transport (server->input_transport_factory, t);
+        output_transport =
+          THRIFT_TRANSPORT_FACTORY_GET_CLASS (server->output_transport_factory)
+          ->get_transport (server->output_transport_factory, t);
+        input_protocol =
+          THRIFT_PROTOCOL_FACTORY_GET_CLASS (server->input_protocol_factory)
+          ->get_protocol (server->input_protocol_factory, input_transport);
+        output_protocol =
+          THRIFT_PROTOCOL_FACTORY_GET_CLASS (server->output_protocol_factory)
+          ->get_protocol (server->output_protocol_factory, output_transport);
 
-      // Note we do not propagate processing errors to the caller as they
-      // normally are transient and not fatal to the server
+        while (THRIFT_PROCESSOR_GET_CLASS (server->processor)
+               ->process (server->processor,
+                          input_protocol,
+                          output_protocol,
+                          &process_error) &&
+               thrift_transport_peek (input_transport, &process_error))
+        {
+        }
+
+        if (process_error != NULL)
+        {
+          g_message ("thrift_simple_server_serve: %s", process_error->message);
+          g_clear_error (&process_error);
+
+          // Note we do not propagate processing errors to the caller as they
+          // normally are transient and not fatal to the server
+        }
+
+        // TODO: handle exceptions
+        THRIFT_TRANSPORT_GET_CLASS (input_transport)->close (input_transport,
+                                                             NULL);
+        THRIFT_TRANSPORT_GET_CLASS (output_transport)->close (output_transport,
+                                                              NULL);
+      }
     }
-  }
 
     // attempt to shutdown
-  THRIFT_TRANSPORT_GET_CLASS (server->server_transport)
-    ->close (server->server_transport, NULL);
+    THRIFT_SERVER_TRANSPORT_GET_CLASS (server->server_transport)
+      ->close (server->server_transport, NULL);
+  }
 
   // Since this method is designed to run forever, it can only ever return on
   // error
