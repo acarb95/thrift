@@ -579,7 +579,7 @@ void increment_array_perf(SimpleArrayComputationIf *client,
   uint64_t increment_array_total = 0;
 
   fprintf(outfile, "size,us latency\n");
-  for (int s = 5; s < max_size; s+= incr) {
+  for (int s = 0; s < max_size; s+= incr) {
     increment_array_total = 0;
     for (int i = 0; i < iterations; i++) {
       increment_array_total += test_increment_array(client, s, targetIP, FALSE);
@@ -598,7 +598,7 @@ void add_arrays_perf(SimpleArrayComputationIf *client,
   uint64_t add_arrays_total = 0;
 
   fprintf(outfile, "size,us latency\n");
-  for (int s = 5; s < max_size; s+= incr) {
+  for (int s = 0; s < max_size; s+= incr) {
     add_arrays_total = 0;
     for (int i = 0; i < iterations; i++) {
       add_arrays_total += test_add_arrays(client, s, targetIP, FALSE);
@@ -612,7 +612,10 @@ void add_arrays_perf(SimpleArrayComputationIf *client,
   // free(add_arrays_times);
 }
 
-void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client, SimpleArrayComputationIf *arrcomp_client, struct sockaddr_in6 *targetIP, int iterations) {
+void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client, 
+                              SimpleArrayComputationIf *arrcomp_client, 
+                              struct sockaddr_in6 *targetIP, int iterations,
+                              int max_size, int incr) {
   microbenchmark_perf(remmem_client, iterations);
 
   FILE* incrarr_outfile = fopen("./incr_array_results.csv", "w");
@@ -623,15 +626,15 @@ void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client, SimpleArrayComp
 
   printf("Starting no-op performance test...\n");
   // Call perf test for no-op RPC
-  no_op_perf(arrcomp_client, targetIP, iterations, 4095, 100);
+  no_op_perf(arrcomp_client, targetIP, iterations, max_size, incr);
 
   printf("Starting increment array performance test...\n");
   // Call perf test for increment array rpc
-  increment_array_perf(arrcomp_client, targetIP, iterations, 4095, 100, incrarr_outfile);
+  increment_array_perf(arrcomp_client, targetIP, iterations, max_size, incr, incrarr_outfile);
 
   printf("Starting add arrays performance test...\n");
   // Call perf test for add arrays
-  add_arrays_perf(arrcomp_client, targetIP, iterations, 4095, 100, addarr_outfile);
+  add_arrays_perf(arrcomp_client, targetIP, iterations, max_size, incr, addarr_outfile);
 
   fclose(incrarr_outfile);
   fclose(addarr_outfile);
@@ -653,14 +656,14 @@ int main (int argc, char *argv[]) {
   int c; 
   struct config myConf;
   struct sockaddr_in6 *targetIP;
-  int iterations = 0;
+  int iterations = 0, max_size = 4096, incr = 100;
 
   if (argc < 5) {
     usage(argv[0], "Not enough arguments");
     return -1;
   }
 
-  while ((c = getopt (argc, argv, "c:i:")) != -1) { 
+  while ((c = getopt (argc, argv, "c:i:m:s:")) != -1) { 
   switch (c) 
     { 
     case 'c':
@@ -668,6 +671,12 @@ int main (int argc, char *argv[]) {
       break;
     case 'i':
       iterations = atoi(optarg);
+      break;
+    case 'm':
+      max_size = atoi(optarg);
+      break;
+    case 's':
+      incr = atoi(optarg);
       break;
     case '?':
       usage(argv[0], "");
@@ -741,7 +750,7 @@ int main (int argc, char *argv[]) {
   test_shared_pointer_rpc(arrcomp_client, targetIP);
 
   printf("\n####### Shared pointer performance tests #######\n");
-  test_shared_pointer_perf(remmem_client, arrcomp_client, targetIP, iterations);
+  test_shared_pointer_perf(remmem_client, arrcomp_client, targetIP, iterations, max_size, incr);
 
   printf("\n\nCleaning up...\n");
   thrift_transport_close (remmem_transport, NULL);
