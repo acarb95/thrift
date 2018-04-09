@@ -86,7 +86,7 @@ void populate_array(uint8_t **array, int array_len, uint8_t start_num, gboolean 
       num++;
       num = num % UINT8_MAX; // Avoid overflow
     } else {
-      num = (uint8_t) rand();
+      num = ((uint8_t) rand()) % UINT8_MAX;
     }
   }
 }
@@ -300,10 +300,10 @@ uint64_t test_increment_array(SimpleArrayComputationIf *client, int size, struct
   }
 
   // Free malloc'd and GByteArray memory
-  // free(result_arr);
-  // free(arr);
-  // free_rmem(targetIP, &args_addr);
-  // free_rmem(targetIP, &result_addr);
+  free(result_arr);
+  free(arr);
+  free_rmem(targetIP, &args_addr);
+  free_rmem(targetIP, &result_addr);
   // g_byte_array_free(args_ptr, TRUE);  // We allocated this, so we free it
   // g_byte_array_unref(result_ptr);     // We only received this, so we dereference it
 
@@ -401,10 +401,10 @@ cleanupres:
   }
 
   // Free malloc'd and GByteArray memory
-  // free(arr1);
-  // free(arr2);
-  // free_rmem(targetIP, &arg1_addr);    // Free the shared memory
-  // free_rmem(targetIP, &arg2_addr);    // Free the shared memory
+  free(arr1);
+  free(arr2);
+  free_rmem(targetIP, &arg1_addr);    // Free the shared memory
+  free_rmem(targetIP, &arg2_addr);    // Free the shared memory
   // g_byte_array_free(arg1_ptr, TRUE);  // We allocated this, so we free it
   // g_byte_array_free(arg2_ptr, TRUE);  // We allocated this, so we free it
   // g_byte_array_unref(result_ptr);     // We only received this, so we dereference it
@@ -483,10 +483,10 @@ uint64_t no_op_rpc(SimpleArrayComputationIf *client, int size, struct sockaddr_i
   get_rmem(result_arr, arr_len, targetIP, &result_addr);
 
   // Free malloc'd and GByteArray memory
-  // free(result_arr);
-  // free(arr);
-  // free_rmem(targetIP, &args_addr);
-  // free_rmem(targetIP, &result_addr);
+  free(result_arr);
+  free(arr);
+  free_rmem(targetIP, &args_addr);
+  free_rmem(targetIP, &result_addr);
   // g_byte_array_free(args_ptr, TRUE);  // We allocated this, so we free it
   // g_byte_array_unref(result_ptr);     // We only received this, so we dereference it
 
@@ -609,12 +609,15 @@ void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client, SimpleArrayComp
   // TODO: debug, only the first one of these will work consistently, then the server seg faults
   // on a write_rmem. We might be running out of memory somewhere?
 
+  printf("Starting no-op performance test...\n");
   // Call perf test for no-op RPC
   no_op_perf(arrcomp_client, targetIP, iterations, 4095, 100);
 
+  printf("Starting increment array performance test...\n");
   // Call perf test for increment array rpc
   increment_array_perf(arrcomp_client, targetIP, iterations, 4095, 100);
 
+  printf("Starting add arrays performance test...\n");
   // Call perf test for add arrays
   add_arrays_perf(arrcomp_client, targetIP, iterations, 4095, 100);
 }
