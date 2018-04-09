@@ -492,15 +492,19 @@ uint64_t no_op_rpc(SimpleArrayComputationIf *client, int size, struct sockaddr_i
   // Read in result array
   get_rmem(result_arr, arr_len, targetIP, &result_addr);
 
-  printf("Freeing stuff\n");
+  printf("Freeing result\n");
   // Free malloc'd and GByteArray memory
   free(result_arr);
+  printf("array\n");
   free(arr);
+  printf("freeing args address\n");
   free_rmem(targetIP, &args_addr);
+  printf("freeing result address\n");
   free_rmem(targetIP, &result_addr);
   // g_byte_array_free(args_ptr, TRUE);  // We allocated this, so we free it
   // g_byte_array_unref(result_ptr);     // We only received this, so we dereference it
 
+  printf("returning\n");
   return getns() - start;
 }
 
@@ -571,7 +575,7 @@ void no_op_perf(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP,
       no_op_rpc_total += no_op_rpc(client, s, targetIP);
        // no_op_rpc_times[i];
     }
-    printf("Average %s latency (%s): "KRED"%lu us\n"RESET, "no_op_rpcs", s, no_op_rpc_total / (iterations*1000));
+    printf("Average %s latency (%d): "KRED"%lu us\n"RESET, "no_op_rpcs", s, no_op_rpc_total / (iterations*1000));
   }
 
 
@@ -590,7 +594,7 @@ void increment_array_perf(SimpleArrayComputationIf *client,
       increment_array_total += test_increment_array(client, s, targetIP, FALSE);
        // increment_array_times[i];
     }
-    printf("Average %s latency (%s): "KRED"%lu us\n"RESET, "increment_array", s, increment_array_total / (iterations*1000));
+    printf("Average %s latency (%d): "KRED"%lu us\n"RESET, "increment_array", s, increment_array_total / (iterations*1000));
   }
   // free(increment_array_times);
 }
