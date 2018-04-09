@@ -546,7 +546,7 @@ void increment_array_perf(SimpleArrayComputationIf *client, int iterations, int 
   uint64_t increment_array_total = 0;
 
   fprintf(outfile, "size,us latency\n");
-  for (int s = 0; s < max_size; s+=incr) {
+  for (int s = 5; s < max_size; s+=incr) {
     increment_array_total = 0;
     for (int i = 0; i < iterations; i++) {
       increment_array_total = test_increment_array(client, s, FALSE);
@@ -564,7 +564,7 @@ void add_arrays_perf(SimpleArrayComputationIf *client, int iterations, int max_s
   uint64_t add_arrays_total = 0;
 
   fprintf(outfile, "size,us latency\n");
-  for (int s = 0; s < max_size; s+=incr) {
+  for (int s = 5; s < max_size; s+=incr) {
     add_arrays_total = 0;
     for (int i = 0; i < iterations; i++) {
       add_arrays_total = test_add_arrays(client, s, FALSE);
