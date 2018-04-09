@@ -582,7 +582,7 @@ void increment_array_perf(SimpleArrayComputationIf *client,
        // increment_array_times[i];
     }
     // printf("Average %s latency (%d): "KRED"%lu us\n"RESET, "increment_array", s, increment_array_total / (iterations*1000));
-    fprintf(outfile, "%d,%lu\n",s, add_arrays_total / (iterations*1000) );
+    fprintf(outfile, "%d,%lu\n",s, increment_array_total / (iterations*1000) );
   }
   // free(increment_array_times);
 }
