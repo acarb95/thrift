@@ -238,6 +238,8 @@ test-driver
 /tutorial/cpp/TutorialServer
 /tutorial/c_glib/tutorial_client
 /tutorial/c_glib/tutorial_*_server
+/tutorial_thrift/c_glib/thrift_client
+/tutorial_thrift/c_glib/thrift_*_server
 /tutorial/delphi/*.dsk
 /tutorial/delphi/*.local
 /tutorial/delphi/DelphiClient/dcu
