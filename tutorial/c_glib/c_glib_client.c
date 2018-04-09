@@ -37,6 +37,15 @@
 
 gboolean srand_called = FALSE;
 
+struct result {
+  uint64_t alloc;
+  uint64_t read;
+  uint64_t write;
+  uint64_t free;
+  uint64_t rpc_start;
+  uint64_t rpc_end;
+};
+
 // UTILS --> copied to server b/c it's a pain to create a shared file (build issues)
 void get_args_pointer(struct in6_memaddr *ptr, struct sockaddr_in6 *targetIP) {
   // Get random memory server
@@ -228,7 +237,7 @@ void test_server_functionality(RemoteMemoryTestIf *client) {
   test_server_free(client, res, exception, error, TRUE);
 }
 
-uint64_t test_increment_array(SimpleArrayComputationIf *client, int size, struct sockaddr_in6 *targetIP, gboolean print) {
+struct result test_increment_array(SimpleArrayComputationIf *client, int size, struct sockaddr_in6 *targetIP, gboolean print) {
   GError *error = NULL;                       // Error (in transport, socket, etc.)
   CallException *exception = NULL;            // Exception (thrown by server)
   struct in6_memaddr args_addr;               // Shared memory address of the argument pointer
@@ -237,14 +246,17 @@ uint64_t test_increment_array(SimpleArrayComputationIf *client, int size, struct
   uint8_t *arr;                               // Array to be sent (must be uint8_t to match char size)
   int arr_len = size;                           // Size of array to be sent
   uint8_t incr_val = 1;                       // Value to increment each value in the array by
-  uint64_t start, rpc_time;
+  struct result res;
+  uint64_t start;
 
   if (print)
     printf("Testing increment_array...\t");
 
   // Get a shared memory pointer for argument array
   // TODO: add individual timers here to get breakdown of costs. 
+  start = getns();
   get_args_pointer(&args_addr, targetIP);
+  res.alloc = getns() - start;
 
   // Create argument array
   arr = malloc(arr_len*sizeof(uint8_t));
@@ -254,16 +266,18 @@ uint64_t test_increment_array(SimpleArrayComputationIf *client, int size, struct
 
   memcpy(temp, arr, arr_len);
 
+  start = getns();
   // Write array to shared memory
   write_rmem(targetIP, (char*) temp, &args_addr);
+  res.write = getns() - start;
 
   // Marshall shared pointer address
   marshall_shmem_ptr(&args_ptr, &args_addr);
 
-  start = getns();
+  res.rpc_start = getns();
   // CALL RPC
   simple_array_computation_if_increment_array(client, &result_ptr, args_ptr, incr_val, arr_len, &exception, &error);
-  rpc_time = getns() - start;
+  res.rpc_end = getns();
 
   if (print) {
     if (error) {
@@ -289,8 +303,10 @@ uint64_t test_increment_array(SimpleArrayComputationIf *client, int size, struct
   // Create result array to read into
   char* result_arr = malloc(arr_len);
 
+  start = getns();
   // Read in result array
   get_rmem(result_arr, arr_len, targetIP, &result_addr);
+  res.read = getns() - start;
 
   if (print) {
     // Make sure the server returned the correct result
@@ -304,15 +320,18 @@ uint64_t test_increment_array(SimpleArrayComputationIf *client, int size, struct
   // Free malloc'd and GByteArray memory
   free(result_arr);
   free(arr);
+
+  start = getns();
   free_rmem(targetIP, &args_addr);
   free_rmem(targetIP, &result_addr);
+  res.free = getns() - start;
   // g_byte_array_free(args_ptr, TRUE);  // We allocated this, so we free it
   // g_byte_array_unref(result_ptr);     // We only received this, so we dereference it
 
   if (print)
     printf("SUCCESS\n");
 
-  return rpc_time;
+  return res;
 }
 
 uint64_t test_add_arrays(SimpleArrayComputationIf *client, int size, struct sockaddr_in6 *targetIP, gboolean print) {
@@ -572,23 +591,62 @@ void no_op_perf(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP,
   // free(no_op_rpc_times);
 }
 
+FILE* generate_file_handle(char* method_name, char* operation) {
+  int len = strlen(method_name) + strlen(operation) + 16;
+  char temp[len];
+
+  snprintf(temp, len, "./bifrost_%s_%s.txt", method_name, operation);
+
+  return fopen(temp);
+}
+
 void increment_array_perf(SimpleArrayComputationIf *client, 
                           struct sockaddr_in6 *targetIP, int iterations, 
-                          int max_size, int incr, FILE* outfile) {
-  // uint64_t *increment_array_times = malloc(iterations*sizeof(uint64_t));
-  uint64_t increment_array_total = 0;
+                          int max_size, int incr, char* method_name) {
+  uint64_t alloc_times = 0, read_times = 0, write_times = 0, free_times = 0, rpc_start_times = 0, rpc_end_times = 0;
+  FILE* alloc_file = generate_file_handle(method_name, "alloc");
+  FILE* read_file = generate_file_handle(method_name, "read");
+  FILE* write_file = generate_file_handle(method_name, "write");
+  FILE* free_file = generate_file_handle(method_name, "free");
+  FILE* rpc_start_file = generate_file_handle(method_name, "rpc_start");
+  FILE* rpc_end_file = generate_file_handle(method_name, "rpc_end");
 
-  fprintf(outfile, "size,us latency\n");
+  fprintf(alloc_file, "size,avg latency\n");
+  fprintf(read_file, "size,avg latency\n");
+  fprintf(write_file, "size,avg latency\n");
+  fprintf(free_file, "size,avg latency\n");
+  fprintf(rpc_end_file, "size,avg latency\n");
+  fprintf(rpc_start_file, "size,avg latency\n");
+
   for (int s = 0; s < max_size; s+= incr) {
-    increment_array_total = 0;
+    alloc_times = 0;
+    read_times = 0;
+    write_times = 0;
+    free_times = 0;
+    rpc_start_times = 0;
+    rpc_end_times = 0;
     for (int i = 0; i < iterations; i++) {
-      increment_array_total += test_increment_array(client, s, targetIP, FALSE);
-       // increment_array_times[i];
+      struct result res = test_increment_array(client, s, targetIP, FALSE);
+      alloc_times += res.alloc;
+      read_times += res.read;
+      write_times += res.write;
+      free_times += res.free;
+      rpc_start_times += res.rpc_start;
+      rpc_end_times += res.rpc_end;
     }
-    // printf("Average %s latency (%d): "KRED"%lu us\n"RESET, "increment_array", s, increment_array_total / (iterations*1000));
-    fprintf(outfile, "%d,%lu\n",s, increment_array_total / (iterations*1000) );
+    fprintf(alloc_file, "%d,%lu\n", s, alloc_times / (iterations*1000) );
+    fprintf(read_file, "%d,%lu\n", s, read_times / (iterations*1000) );
+    fprintf(write_file, "%d,%lu\n", s, write_times / (iterations*1000) );
+    fprintf(free_file, "%d,%lu\n", s, free_times / (iterations*1000) );
+    fprintf(rpc_start_file, "%d,%lu\n", s, rpc_start_times / (iterations*1000) );
+    fprintf(rpc_end_file, "%d,%lu\n", s, rpc_end_times / (iterations*1000) );
   }
-  // free(increment_array_times);
+  fclose(alloc_file);
+  fclose(read_file);
+  fclose(write_file);
+  fclose(free_file);
+  fclose(rpc_start_file);
+  fclose(rpc_end_file);
 }
 
 void add_arrays_perf(SimpleArrayComputationIf *client, 
