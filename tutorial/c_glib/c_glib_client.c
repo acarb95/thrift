@@ -226,14 +226,14 @@ void test_server_functionality(RemoteMemoryTestIf *client) {
   test_server_free(client, res, exception, error, TRUE);
 }
 
-uint64_t test_increment_array(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP, gboolean print) {
+uint64_t test_increment_array(SimpleArrayComputationIf *client, int size, struct sockaddr_in6 *targetIP, gboolean print) {
   GError *error = NULL;                       // Error (in transport, socket, etc.)
   CallException *exception = NULL;            // Exception (thrown by server)
   struct in6_memaddr args_addr;               // Shared memory address of the argument pointer
   GByteArray* args_ptr = g_byte_array_new();  // Argument pointer
   GByteArray* result_ptr = NULL;              // Result pointer
   uint8_t *arr;                               // Array to be sent (must be uint8_t to match char size)
-  int arr_len = 10;                           // Size of array to be sent
+  int arr_len = size;                           // Size of array to be sent
   uint8_t incr_val = 1;                       // Value to increment each value in the array by
 
   if (print)
@@ -312,7 +312,7 @@ uint64_t test_increment_array(SimpleArrayComputationIf *client, struct sockaddr_
   return total;
 }
 
-uint64_t test_add_arrays(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP, gboolean print) {
+uint64_t test_add_arrays(SimpleArrayComputationIf *client, int size, struct sockaddr_in6 *targetIP, gboolean print) {
   GError *error = NULL;                       // Error (in transport, socket, etc.)
   CallException *exception = NULL;            // Exception (thrown by server)
   struct in6_memaddr arg1_addr;               // Shared memory address of the argument pointer
@@ -323,7 +323,7 @@ uint64_t test_add_arrays(SimpleArrayComputationIf *client, struct sockaddr_in6 *
   struct in6_memaddr result_addr;             // Shared memory address of result
   uint8_t *arr1;                              // Array 1 to be added
   uint8_t *arr2;                              // Array 2 to be added
-  int arrays_len = 10;                        // Size of array to be sent
+  int arrays_len = size;                        // Size of array to be sent
 
   if (print)
     printf("Testing add_arrays...\t\t");
@@ -440,13 +440,13 @@ void sort_array(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP)
   THRIFT_UNUSED_VAR(targetIP);
 }
 
-uint64_t no_op_rpc(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP) {
+uint64_t no_op_rpc(SimpleArrayComputationIf *client, int size, struct sockaddr_in6 *targetIP) {
   GError *error = NULL;                       // Error (in transport, socket, etc.)
   struct in6_memaddr args_addr;               // Shared memory address of the argument pointer
   GByteArray* args_ptr = g_byte_array_new();  // Argument pointer
   GByteArray* result_ptr = NULL;              // Result pointer
   uint8_t *arr;                               // Array to be sent (must be uint8_t to match char size)
-  int arr_len = 10;                           // Size of array to be sent
+  int arr_len = size;                           // Size of array to be sent
 
   uint64_t start = getns();
 
@@ -491,8 +491,8 @@ uint64_t no_op_rpc(SimpleArrayComputationIf *client, struct sockaddr_in6 *target
 }
 
 void test_shared_pointer_rpc(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP) {
-  test_increment_array(client, targetIP, TRUE);
-  test_add_arrays(client, targetIP, TRUE);
+  test_increment_array(client, 4095, targetIP, TRUE);
+  test_add_arrays(client, 4095, targetIP, TRUE);
   // mat_multiply(client, targetIP);
   // word_count(client, targetIP);
   // sort_array(client, targetIP);
@@ -551,7 +551,7 @@ void no_op_perf(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP,
   uint64_t no_op_rpc_total = 0;
 
   for (int i = 0; i < iterations; i++) {
-    no_op_rpc_times[i] = no_op_rpc(client, targetIP);
+    no_op_rpc_times[i] = no_op_rpc(client, 4095, targetIP);
     no_op_rpc_total += no_op_rpc_times[i];
   }
 
@@ -565,7 +565,7 @@ void increment_array_perf(SimpleArrayComputationIf *client, struct sockaddr_in6 
   uint64_t increment_array_total = 0;
 
   for (int i = 0; i < iterations; i++) {
-    increment_array_times[i] = test_increment_array(client, targetIP, FALSE);
+    increment_array_times[i] = test_increment_array(client, 4095, targetIP, FALSE);
     increment_array_total += increment_array_times[i];
   }
 
@@ -578,7 +578,7 @@ void add_arrays_perf(SimpleArrayComputationIf *client, struct sockaddr_in6 *targ
   uint64_t add_arrays_total = 0;
 
   for (int i = 0; i < iterations; i++) {
-    add_arrays_times[i] = test_add_arrays(client, targetIP, FALSE);
+    add_arrays_times[i] = test_add_arrays(client, 4095, targetIP, FALSE);
     add_arrays_total += add_arrays_times[i];
   }
 

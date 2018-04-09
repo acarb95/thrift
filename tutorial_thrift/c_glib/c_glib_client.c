@@ -226,11 +226,11 @@ void test_server_functionality(RemoteMemoryTestIf *client) {
   test_server_free(client, res, exception, error, TRUE);
 }
 
-uint64_t test_increment_array(SimpleArrayComputationIf *client, gboolean print) {
+uint64_t test_increment_array(SimpleArrayComputationIf *client, int size, gboolean print) {
   GError *error = NULL;                       // Error (in transport, socket, etc.)
   CallException *exception = NULL;            // Exception (thrown by server)
   GArray* result_array = g_array_new(FALSE, FALSE, sizeof(uint8_t));              // Result pointer
-  int arr_len = 10;                           // Size of array to be sent
+  int arr_len = size;                           // Size of array to be sent
   uint8_t incr_val = 1;                       // Value to increment each value in the array by
   GArray* arr = g_array_new(TRUE, TRUE, sizeof(uint8_t));                               // Array to be sent (must be uint8_t to match char size)
   uint8_t* temp = NULL;
@@ -285,10 +285,10 @@ uint64_t test_increment_array(SimpleArrayComputationIf *client, gboolean print) 
   return total;
 }
 
-uint64_t test_add_arrays(SimpleArrayComputationIf *client, gboolean print) {
+uint64_t test_add_arrays(SimpleArrayComputationIf *client, int size, gboolean print) {
   GError *error = NULL;                       // Error (in transport, socket, etc.)
   CallException *exception = NULL;            // Exception (thrown by server)
-  int arrays_len = 10;                        // Size of array to be sent
+  int arrays_len = size;                        // Size of array to be sent
   GArray* array1 = g_array_sized_new(TRUE, TRUE, sizeof(uint8_t), arrays_len);  // Argument pointer
   GArray* array2 = g_array_sized_new(TRUE, TRUE, sizeof(uint8_t), arrays_len);  // Argument pointer
   GArray* result_arr = g_array_new(TRUE, TRUE, sizeof(uint8_t));;              // Result pointer
@@ -442,9 +442,9 @@ void sort_array(SimpleArrayComputationIf *client) {
   THRIFT_UNUSED_VAR(client);
 }
 
-uint64_t no_op_rpc(SimpleArrayComputationIf *client) {
+uint64_t no_op_rpc(SimpleArrayComputationIf *client, int size) {
   GError *error = NULL;                       // Error (in transport, socket, etc.)
-  int arr_len = 10;                           // Size of array to be sent
+  int arr_len = size;                           // Size of array to be sent
   GArray* arr = g_array_sized_new(TRUE, TRUE, sizeof(uint8_t), arr_len);  // Argument pointer
   GArray* result_array = g_array_new(FALSE, FALSE, sizeof(uint8_t));              // Result pointer
   uint8_t *temp;                               // Array to be sent (must be uint8_t to match char size)
@@ -470,8 +470,8 @@ uint64_t no_op_rpc(SimpleArrayComputationIf *client) {
 }
 
 void test_shared_pointer_rpc(SimpleArrayComputationIf *client) {
-  test_increment_array(client, TRUE);
-  test_add_arrays(client, TRUE);
+  test_increment_array(client, 4095, TRUE);
+  test_add_arrays(client, 4095, TRUE);
   // mat_multiply(client, TRUE);
   // word_count(client, TRUE);
   // sort_array(client, TRUE);
@@ -530,7 +530,7 @@ void no_op_perf(SimpleArrayComputationIf *client, int iterations) {
   uint64_t no_op_rpc_total = 0;
 
   for (int i = 0; i < iterations; i++) {
-    no_op_rpc_times[i] = no_op_rpc(client);
+    no_op_rpc_times[i] = no_op_rpc(client, 4095);
     no_op_rpc_total += no_op_rpc_times[i];
   }
 
@@ -544,7 +544,7 @@ void increment_array_perf(SimpleArrayComputationIf *client, int iterations) {
   uint64_t increment_array_total = 0;
 
   for (int i = 0; i < iterations; i++) {
-    increment_array_times[i] = test_increment_array(client, FALSE);
+    increment_array_times[i] = test_increment_array(client, 4095, FALSE);
     increment_array_total += increment_array_times[i];
   }
 
@@ -557,7 +557,7 @@ void add_arrays_perf(SimpleArrayComputationIf *client, int iterations) {
   uint64_t add_arrays_total = 0;
 
   for (int i = 0; i < iterations; i++) {
-    add_arrays_times[i] = test_add_arrays(client, FALSE);
+    add_arrays_times[i] = test_add_arrays(client, 4095, FALSE);
     add_arrays_total += add_arrays_times[i];
   }
 
