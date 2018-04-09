@@ -237,11 +237,10 @@ uint64_t test_increment_array(SimpleArrayComputationIf *client, int size, struct
   uint8_t *arr;                               // Array to be sent (must be uint8_t to match char size)
   int arr_len = size;                           // Size of array to be sent
   uint8_t incr_val = 1;                       // Value to increment each value in the array by
+  uint64_t start, rpc_time;
 
   if (print)
     printf("Testing increment_array...\t");
-
-  uint64_t start = getns();
 
   // Get a shared memory pointer for argument array
   // TODO: add individual timers here to get breakdown of costs. 
@@ -261,8 +260,11 @@ uint64_t test_increment_array(SimpleArrayComputationIf *client, int size, struct
   // Marshall shared pointer address
   marshall_shmem_ptr(&args_ptr, &args_addr);
 
+  start = getns();
   // CALL RPC
   simple_array_computation_if_increment_array(client, &result_ptr, args_ptr, incr_val, arr_len, &exception, &error);
+  rpc_time = getns() - start;
+
   if (print) {
     if (error) {
       printf ("ERROR: %s\n", error->message);
@@ -307,12 +309,10 @@ uint64_t test_increment_array(SimpleArrayComputationIf *client, int size, struct
   // g_byte_array_free(args_ptr, TRUE);  // We allocated this, so we free it
   // g_byte_array_unref(result_ptr);     // We only received this, so we dereference it
 
-  uint64_t total = getns() - start;
-
   if (print)
     printf("SUCCESS\n");
 
-  return total;
+  return rpc_time;
 }
 
 uint64_t test_add_arrays(SimpleArrayComputationIf *client, int size, struct sockaddr_in6 *targetIP, gboolean print) {
@@ -411,7 +411,7 @@ cleanupres:
   // g_byte_array_free(arg2_ptr, TRUE);  // We allocated this, so we free it
   // g_byte_array_unref(result_ptr);     // We only received this, so we dereference it
 
-  return getns() - start;
+  return rpc_time;
 }
 
 void mat_multiply(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP) {

@@ -296,11 +296,10 @@ uint64_t test_add_arrays(SimpleArrayComputationIf *client, int size, gboolean pr
   GArray* result_arr = g_array_new(TRUE, TRUE, sizeof(uint8_t));;              // Result pointer
   uint8_t *temp1;                              // Array 1 to be added
   uint8_t *temp2;                              // Array 2 to be added
+  uint64_t start, rpc_time;
 
   if (print)
     printf("Testing add_arrays...\t\t");
-
-  uint64_t start = getns();
 
   // Populate arrays
   temp1 = malloc(arrays_len*sizeof(uint8_t));
@@ -311,8 +310,11 @@ uint64_t test_add_arrays(SimpleArrayComputationIf *client, int size, gboolean pr
   g_array_append_vals(array1, temp1, arrays_len);
   g_array_append_vals(array2, temp2, arrays_len);
 
+  start = getns();
   // CALL RPC
   simple_array_computation_if_add_arrays(client, &result_arr, array1, array2, arrays_len, &exception, &error);
+  rpc_time = getns() - start;
+
   if (error) {
     printf ("ERROR: %s\n", error->message);
     g_clear_error (&error);
@@ -345,7 +347,7 @@ uint64_t test_add_arrays(SimpleArrayComputationIf *client, int size, gboolean pr
   free(temp1);
   free(temp2);
 
-  return getns() - start;
+  return rpc_time;
 }
 
 gint8 dot_prod_helper(GArray* x, const GArray* y, int m) {
@@ -453,8 +455,6 @@ uint64_t no_op_rpc(SimpleArrayComputationIf *client, int size) {
 
   THRIFT_UNUSED_VAR(client);
 
-  uint64_t start = getns();
-
   // Create argument array
   temp = malloc(arr_len*sizeof(uint8_t));
   populate_array(&temp, arr_len, 0, FALSE);
@@ -462,13 +462,15 @@ uint64_t no_op_rpc(SimpleArrayComputationIf *client, int size) {
   g_array_append_vals(arr, temp, arr_len);
 
   // CALL RPC
+  uint64_t start = getns();
   simple_array_computation_if_no_op(client, &result_array, arr, arr_len, &error);
+  uint64_t rpc_time = getns() - start;
   if (error) {
     printf ("ERROR: %s\n", error->message);
     g_clear_error (&error);
   }
   
-  return getns() - start;
+  return rpc_time;
 }
 
 void test_shared_pointer_rpc(SimpleArrayComputationIf *client) {
