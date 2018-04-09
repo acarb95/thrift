@@ -454,34 +454,45 @@ uint64_t no_op_rpc(SimpleArrayComputationIf *client, int size, struct sockaddr_i
   uint64_t start = getns();
 
   // Get a shared memory pointer for argument array
+  printf("Get args pointer\n");
   get_args_pointer(&args_addr, targetIP);
 
   // Create argument array
+  printf("Mallocing array\n");
   arr = malloc(arr_len*sizeof(uint8_t));
+  printf("Populating array\n");
   populate_array(&arr, arr_len, 0, FALSE);
 
+  printf("Memcpying (%d) into BLOCK_SIZE (%d)\n", arr_len, BLOCK_SIZE);
   char temp[BLOCK_SIZE];
   memcpy(temp, arr, arr_len);
 
+  printf("Writing\n");
   // Write array to shared memory
   write_rmem(targetIP, (char*) temp, &args_addr);
 
+  printf("Marshalling\n");
   // Marshall shared pointer address
   marshall_shmem_ptr(&args_ptr, &args_addr);
 
+  printf("Calling RPC\n");
   // CALL RPC
   simple_array_computation_if_no_op(client, &result_ptr, args_ptr, arr_len, &error);
 
+  printf("Unmarshalling\n");
   // Unmarshall shared pointer address
   struct in6_memaddr result_addr;
   unmarshall_shmem_ptr(&result_addr, result_ptr);
 
+  printf("Mallocing result array\n");
   // Create result array to read into
   char* result_arr = malloc(arr_len);
 
+  printf("Reading memory\n");
   // Read in result array
   get_rmem(result_arr, arr_len, targetIP, &result_addr);
 
+  printf("Freeing stuff\n");
   // Free malloc'd and GByteArray memory
   free(result_arr);
   free(arr);
