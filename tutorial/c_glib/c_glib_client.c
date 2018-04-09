@@ -82,10 +82,12 @@ void populate_array(uint8_t **array, int array_len, uint8_t start_num, gboolean 
 
   for (int i = 0; i < array_len; i++) {
     (*array)[i] = num;
-    if (!random)
+    if (!random) {
       num++;
-    else
+      num = num % UINT8_MAX; // Avoid overflow
+    } else {
       num = (uint8_t) rand();
+    }
   }
 }
 
