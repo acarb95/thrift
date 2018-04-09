@@ -242,6 +242,7 @@ uint64_t test_increment_array(SimpleArrayComputationIf *client, int size, struct
   uint64_t start = getns();
 
   // Get a shared memory pointer for argument array
+  // TODO: add individual timers here to get breakdown of costs. 
   get_args_pointer(&args_addr, targetIP);
 
   // Create argument array
@@ -546,45 +547,58 @@ void microbenchmark_perf(RemoteMemoryTestIf *client, int iterations) {
   free(free_times);
 }
 
-void no_op_perf(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP, int iterations) {
-  uint64_t *no_op_rpc_times = malloc(iterations*sizeof(uint64_t));
-  uint64_t no_op_rpc_total = 0;
+void no_op_perf(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP,
+                int iterations, int max_size, int incr) {
+  // uint64_t *no_op_rpc_times = malloc(iterations*sizeof(uint64_t));
+  uint64_t no_op_rpc_total;
 
-  for (int i = 0; i < iterations; i++) {
-    no_op_rpc_times[i] = no_op_rpc(client, 4095, targetIP);
-    no_op_rpc_total += no_op_rpc_times[i];
+  for (int s = 10; s < max_size; s+= incr) {
+    no_op_rpc_total = 0;
+    for (int i = 0; i < iterations; i++) {
+      no_op_rpc_total += no_op_rpc(client, s, targetIP);
+       // no_op_rpc_times[i];
+    }
+    printf("Average %s latency (%s): "KRED"%lu us\n"RESET, "no_op_rpcs", s, no_op_rpc_total / (iterations*1000));
   }
 
-  printf("Average %s latency: "KRED"%lu us\n"RESET, "no_op_rpcs", no_op_rpc_total / (iterations*1000));
 
-  free(no_op_rpc_times);
+  // free(no_op_rpc_times);
 }
 
-void increment_array_perf(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP, int iterations) {
-  uint64_t *increment_array_times = malloc(iterations*sizeof(uint64_t));
+void increment_array_perf(SimpleArrayComputationIf *client, 
+                          struct sockaddr_in6 *targetIP, int iterations, 
+                          int max_size, int incr) {
+  // uint64_t *increment_array_times = malloc(iterations*sizeof(uint64_t));
   uint64_t increment_array_total = 0;
 
-  for (int i = 0; i < iterations; i++) {
-    increment_array_times[i] = test_increment_array(client, 4095, targetIP, FALSE);
-    increment_array_total += increment_array_times[i];
+  for (int s = 10; s < max_size; s+= incr) {
+    increment_array_total += 0;
+    for (int i = 0; i < iterations; i++) {
+      increment_array_total += test_increment_array(client, s, targetIP, FALSE);
+       // increment_array_times[i];
+    }
+    printf("Average %s latency (%s): "KRED"%lu us\n"RESET, "increment_array", s, increment_array_total / (iterations*1000));
   }
-
-  printf("Average %s latency: "KRED"%lu us\n"RESET, "increment_array", increment_array_total / (iterations*1000));
-  free(increment_array_times);
+  // free(increment_array_times);
 }
 
-void add_arrays_perf(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP, int iterations) {
-  uint64_t *add_arrays_times = malloc(iterations*sizeof(uint64_t));
+void add_arrays_perf(SimpleArrayComputationIf *client, 
+                     struct sockaddr_in6 *targetIP, int iterations, 
+                     int max_size, int incr) {
+  // uint64_t *add_arrays_times = malloc(iterations*sizeof(uint64_t));
   uint64_t add_arrays_total = 0;
 
-  for (int i = 0; i < iterations; i++) {
-    add_arrays_times[i] = test_add_arrays(client, 4095, targetIP, FALSE);
-    add_arrays_total += add_arrays_times[i];
+  for (int s = 5; s < max_size; s+= incr) {
+    add_arrays_total = 0;
+    for (int i = 0; i < iterations; i++) {
+      add_arrays_total += test_add_arrays(client, s, targetIP, FALSE);
+       // add_arrays_times[i];
+    }
+    printf("Average %s latency (%d): "KRED"%lu us\n"RESET, "add_arrays", s, add_arrays_total / (iterations*1000));
   }
 
-  printf("Average %s latency: "KRED"%lu us\n"RESET, "add_arrays", add_arrays_total / (iterations*1000));
 
-  free(add_arrays_times);
+  // free(add_arrays_times);
 }
 
 void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client, SimpleArrayComputationIf *arrcomp_client, struct sockaddr_in6 *targetIP, int iterations) {
@@ -594,13 +608,13 @@ void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client, SimpleArrayComp
   // on a write_rmem. We might be running out of memory somewhere?
 
   // Call perf test for no-op RPC
-  no_op_perf(arrcomp_client, targetIP, iterations);
+  no_op_perf(arrcomp_client, targetIP, iterations, 4095, 100);
 
   // Call perf test for increment array rpc
-  increment_array_perf(arrcomp_client, targetIP, iterations);
+  increment_array_perf(arrcomp_client, targetIP, iterations, 4095, 100);
 
   // Call perf test for add arrays
-  add_arrays_perf(arrcomp_client, targetIP, iterations);
+  add_arrays_perf(arrcomp_client, targetIP, iterations, 4095, 100);
 }
 
 int main (int argc, char *argv[]) {
