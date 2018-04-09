@@ -539,31 +539,37 @@ void no_op_perf(SimpleArrayComputationIf *client, int iterations) {
   free(no_op_rpc_times);
 }
 
-void increment_array_perf(SimpleArrayComputationIf *client, int iterations) {
-  uint64_t *increment_array_times = malloc(iterations*sizeof(uint64_t));
+void increment_array_perf(SimpleArrayComputationIf *client, int iterations, int max_size, int incr) {
+  // uint64_t *increment_array_times = malloc(iterations*sizeof(uint64_t));
   uint64_t increment_array_total = 0;
 
-  for (int i = 0; i < iterations; i++) {
-    increment_array_times[i] = test_increment_array(client, 4095, FALSE);
-    increment_array_total += increment_array_times[i];
+  for (int s = 0; s < max_size; s++) {
+    increment_array_total = 0;
+    for (int i = 0; i < iterations; i++) {
+      increment_array_total = test_increment_array(client, s, FALSE);
+      // increment_array_total += increment_array_times[i];
+    }
+    printf("Average %s latency (%d): "KRED"%lu us\n"RESET, "increment_array", s, increment_array_total / (iterations*1000));
   }
 
-  printf("Average %s latency: "KRED"%lu us\n"RESET, "increment_array", increment_array_total / (iterations*1000));
-  free(increment_array_times);
+  // free(increment_array_times);
 }
 
-void add_arrays_perf(SimpleArrayComputationIf *client, int iterations) {
-  uint64_t *add_arrays_times = malloc(iterations*sizeof(uint64_t));
+void add_arrays_perf(SimpleArrayComputationIf *client, int iterations, int max_size, int incr) {
+  // uint64_t *add_arrays_times = malloc(iterations*sizeof(uint64_t));
   uint64_t add_arrays_total = 0;
 
-  for (int i = 0; i < iterations; i++) {
-    add_arrays_times[i] = test_add_arrays(client, 4095, FALSE);
-    add_arrays_total += add_arrays_times[i];
+  for (int s = 0; s < max_size; s++) {
+    add_arrays_total = 0;
+    for (int i = 0; i < iterations; i++) {
+      add_arrays_total = test_add_arrays(client, s, FALSE);
+      // add_arrays_total += add_arrays_times[i];
+    }
+    printf("Average %s latency (%d): "KRED"%lu us\n"RESET, "add_arrays", s, add_arrays_total / (iterations*1000));
   }
 
-  printf("Average %s latency: "KRED"%lu us\n"RESET, "add_arrays", add_arrays_total / (iterations*1000));
 
-  free(add_arrays_times);
+  // free(add_arrays_times);
 }
 
 void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client, SimpleArrayComputationIf *arrcomp_client, int iterations) {
@@ -576,10 +582,10 @@ void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client, SimpleArrayComp
   no_op_perf(arrcomp_client, iterations);
 
   // Call perf test for increment array rpc
-  increment_array_perf(arrcomp_client, iterations);
+  increment_array_perf(arrcomp_client, iterations, 4095, 10);
 
   // Call perf test for add arrays
-  add_arrays_perf(arrcomp_client, iterations);
+  add_arrays_perf(arrcomp_client, iterations, 4094, 10);
 }
 
 int main (int argc, char *argv[]) {

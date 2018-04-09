@@ -553,15 +553,16 @@ void no_op_perf(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP,
                 int iterations, int max_size, int incr) {
   // uint64_t *no_op_rpc_times = malloc(iterations*sizeof(uint64_t));
   uint64_t no_op_rpc_total;
+  int s = 4095;
 
-  for (int s = 10; s < max_size; s+= incr) {
+  // for (int s = 10; s < max_size; s+= incr) {
     no_op_rpc_total = 0;
     for (int i = 0; i < iterations; i++) {
       no_op_rpc_total += no_op_rpc(client, s, targetIP);
        // no_op_rpc_times[i];
     }
     printf("Average %s latency (%d): "KRED"%lu us\n"RESET, "no_op_rpcs", s, no_op_rpc_total / (iterations*1000));
-  }
+  // }
 
 
   // free(no_op_rpc_times);
