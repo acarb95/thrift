@@ -580,7 +580,7 @@ void increment_array_perf(SimpleArrayComputationIf *client,
 
   fprintf(outfile, "size,us latency\n");
   for (int s = 5; s < max_size; s+= incr) {
-    increment_array_total += 0;
+    increment_array_total = 0;
     for (int i = 0; i < iterations; i++) {
       increment_array_total += test_increment_array(client, s, targetIP, FALSE);
        // increment_array_times[i];
