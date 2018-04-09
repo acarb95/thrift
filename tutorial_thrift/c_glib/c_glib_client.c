@@ -551,7 +551,7 @@ void increment_array_perf(SimpleArrayComputationIf *client, int iterations, int 
       // increment_array_total += increment_array_times[i];
     }
     // printf("Average %s latency (%d): "KRED"%lu us\n"RESET, "increment_array", s, increment_array_total / (iterations*1000));
-    fprintf(outf, "%d,%lu\n", s, increment_array_total / (iterations*1000));
+    fprintf(outfile, "%d,%lu\n", s, increment_array_total / (iterations*1000));
   }
 
   // free(increment_array_times);
@@ -569,7 +569,7 @@ void add_arrays_perf(SimpleArrayComputationIf *client, int iterations, int max_s
       // add_arrays_total += add_arrays_times[i];
     }
     // printf("Average %s latency (%d): "KRED"%lu us\n"RESET, "add_arrays", s, add_arrays_total / (iterations*1000));
-    fprintf(outf, "%d,%lu\n", s, add_arrays_total / (iterations*1000));
+    fprintf(outfile, "%d,%lu\n", s, add_arrays_total / (iterations*1000));
   }
 
 
