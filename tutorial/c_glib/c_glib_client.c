@@ -327,11 +327,10 @@ uint64_t test_add_arrays(SimpleArrayComputationIf *client, int size, struct sock
   uint8_t *arr1;                              // Array 1 to be added
   uint8_t *arr2;                              // Array 2 to be added
   int arrays_len = size;                        // Size of array to be sent
+  uint64_t start, rpc_time;
 
   if (print)
     printf("Testing add_arrays...\t\t");
-
-  uint64_t start = getns();
 
   // Get pointers for arrays
   get_args_pointer(&arg1_addr, targetIP);
@@ -358,7 +357,10 @@ uint64_t test_add_arrays(SimpleArrayComputationIf *client, int size, struct sock
   marshall_shmem_ptr(&arg2_ptr, &arg2_addr);
 
   // CALL RPC
+  start = getns();
   simple_array_computation_if_add_arrays(client, &result_ptr, arg1_ptr, arg2_ptr, arrays_len, &exception, &error);
+  rpc_time = getns() - start;
+
   if (error) {
     printf ("ERROR: %s\n", error->message);
     g_clear_error (&error);
@@ -450,8 +452,8 @@ uint64_t no_op_rpc(SimpleArrayComputationIf *client, int size, struct sockaddr_i
   GByteArray* result_ptr = NULL;              // Result pointer
   uint8_t *arr;                               // Array to be sent (must be uint8_t to match char size)
   int arr_len = size;                           // Size of array to be sent
+  uint64_t start, rpc_time;
 
-  uint64_t start = getns();
 
   // Get a shared memory pointer for argument array
   get_args_pointer(&args_addr, targetIP);
@@ -469,8 +471,10 @@ uint64_t no_op_rpc(SimpleArrayComputationIf *client, int size, struct sockaddr_i
   // Marshall shared pointer address
   marshall_shmem_ptr(&args_ptr, &args_addr);
 
+  start = getns();
   // CALL RPC
   simple_array_computation_if_no_op(client, &result_ptr, args_ptr, arr_len, &error);
+  rpc_time = getns() - start;
 
   // Unmarshall shared pointer address
   struct in6_memaddr result_addr;
@@ -490,7 +494,7 @@ uint64_t no_op_rpc(SimpleArrayComputationIf *client, int size, struct sockaddr_i
   // g_byte_array_free(args_ptr, TRUE);  // We allocated this, so we free it
   // g_byte_array_unref(result_ptr);     // We only received this, so we dereference it
 
-  return getns() - start;
+  return rpc_time;
 }
 
 void test_shared_pointer_rpc(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP) {

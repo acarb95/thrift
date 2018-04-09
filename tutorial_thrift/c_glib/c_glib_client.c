@@ -236,11 +236,10 @@ uint64_t test_increment_array(SimpleArrayComputationIf *client, int size, gboole
   uint8_t incr_val = 1;                       // Value to increment each value in the array by
   GArray* arr = g_array_new(TRUE, TRUE, sizeof(uint8_t));                               // Array to be sent (must be uint8_t to match char size)
   uint8_t* temp = NULL;
+  uint64_t start, rpc_time;
 
   if (print)
     printf("Testing increment_array...\t");
-
-  uint64_t start = getns();
 
   // Create argument array
   temp = malloc(arr_len*sizeof(uint8_t));
@@ -248,8 +247,11 @@ uint64_t test_increment_array(SimpleArrayComputationIf *client, int size, gboole
 
   g_array_append_vals(arr, temp, arr_len);
 
+  start = getns();
   // CALL RPC
   simple_array_computation_if_increment_array(client, &result_array, arr, incr_val, arr_len, &exception, &error);
+  rpc_time = getns() - start;
+
   if (print) {
     if (error) {
       printf ("ERROR: %s\n", error->message);
@@ -279,12 +281,10 @@ uint64_t test_increment_array(SimpleArrayComputationIf *client, int size, gboole
   // Free malloc'd and GByteArray memory
   free(temp);
 
-  uint64_t total = getns() - start;
-
   if (print)
     printf("SUCCESS\n");
 
-  return total;
+  return rpc_time;
 }
 
 uint64_t test_add_arrays(SimpleArrayComputationIf *client, int size, gboolean print) {
@@ -591,10 +591,10 @@ void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client, SimpleArrayComp
   no_op_perf(arrcomp_client, iterations);
 
   // Call perf test for increment array rpc
-  increment_array_perf(arrcomp_client, iterations, 4095, 10, incrarr_outfile);
+  increment_array_perf(arrcomp_client, iterations, 4095, 100, incrarr_outfile);
 
   // Call perf test for add arrays
-  add_arrays_perf(arrcomp_client, iterations, 4094, 10, addarr_outfile);
+  add_arrays_perf(arrcomp_client, iterations, 4094, 100, addarr_outfile);
 
   fclose(incrarr_outfile);
   fclose(addarr_outfile);
