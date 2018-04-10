@@ -292,7 +292,7 @@ struct result test_increment_array(SimpleArrayComputationIf *client, int size, g
   return res;
 }
 
-uint64_t test_add_arrays(SimpleArrayComputationIf *client, int size, gboolean print) {
+struct result test_add_arrays(SimpleArrayComputationIf *client, int size, gboolean print) {
   GError *error = NULL;                       // Error (in transport, socket, etc.)
   CallException *exception = NULL;            // Exception (thrown by server)
   int arrays_len = size;                        // Size of array to be sent
@@ -301,7 +301,7 @@ uint64_t test_add_arrays(SimpleArrayComputationIf *client, int size, gboolean pr
   GArray* result_arr = g_array_new(TRUE, TRUE, sizeof(uint8_t));;              // Result pointer
   uint8_t *temp1;                              // Array 1 to be added
   uint8_t *temp2;                              // Array 2 to be added
-  uint64_t start, rpc_time;
+  struct result res;
 
   if (print)
     printf("Testing add_arrays...\t\t");
@@ -315,10 +315,10 @@ uint64_t test_add_arrays(SimpleArrayComputationIf *client, int size, gboolean pr
   g_array_append_vals(array1, temp1, arrays_len);
   g_array_append_vals(array2, temp2, arrays_len);
 
-  start = getns();
+  res.rpc_start = getns();
   // CALL RPC
   simple_array_computation_if_add_arrays(client, &result_arr, array1, array2, arrays_len, &exception, &error);
-  rpc_time = getns() - start;
+  res.rpc_end = getns();
 
   if (error) {
     printf ("ERROR: %s\n", error->message);
@@ -352,7 +352,7 @@ uint64_t test_add_arrays(SimpleArrayComputationIf *client, int size, gboolean pr
   free(temp1);
   free(temp2);
 
-  return rpc_time;
+  return res;
 }
 
 gint8 dot_prod_helper(GArray* x, const GArray* y, int m) {

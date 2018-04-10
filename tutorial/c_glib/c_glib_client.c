@@ -334,7 +334,7 @@ struct result test_increment_array(SimpleArrayComputationIf *client, int size, s
   return res;
 }
 
-uint64_t test_add_arrays(SimpleArrayComputationIf *client, int size, struct sockaddr_in6 *targetIP, gboolean print) {
+struct result test_add_arrays(SimpleArrayComputationIf *client, int size, struct sockaddr_in6 *targetIP, gboolean print) {
   GError *error = NULL;                       // Error (in transport, socket, etc.)
   CallException *exception = NULL;            // Exception (thrown by server)
   struct in6_memaddr arg1_addr;               // Shared memory address of the argument pointer
