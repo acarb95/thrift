@@ -611,6 +611,9 @@ void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client, SimpleArrayComp
   // Call perf test for no-op RPC
   no_op_perf(arrcomp_client, iterations);
 
+  thrift_transport_record_timestamps(arrcomp_transport, NULL, THRIFT_PERF_SEND, FALSE);
+  thrift_transport_record_timestamps(arrcomp_transport, NULL, THRIFT_PERF_RECV, FALSE);
+
   printf("Starting increment array performance test...\n");
   // Call perf test for increment array rpc
   increment_array_perf(arrcomp_client, iterations, max_size, incr, "incr_arr");

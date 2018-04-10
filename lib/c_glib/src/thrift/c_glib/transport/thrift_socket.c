@@ -298,14 +298,14 @@ thrift_socket_record_timestamps (ThriftTransport *transport,
     default:
       return FALSE;
   }
-  
+
   if (write) {
     for(int i = 0; i < size; i++) {
       fprintf(out, "%lu\n", g_array_index(arr, guint64, i));
     }
   }
 
-  g_array_remove_range(arr, 0, size);
+  arr = g_array_remove_range(arr, 0, size);
 
   return TRUE;
 }
