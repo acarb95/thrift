@@ -591,11 +591,15 @@ void no_op_perf(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP,
   // free(no_op_rpc_times);
 }
 
-FILE* generate_file_handle(char* method_name, char* operation) {
+FILE* generate_file_handle(char* method_name, char* operation, int size) {
   int len = strlen(method_name) + strlen(operation) + 16;
   char temp[len];
 
-  snprintf(temp, len, "./bifrost_%s_%s.txt", method_name, operation);
+  if (size > -1) {
+    snprintf(temp, len, "./bifrost_%s_%s_%d.txt", method_name, operation, size);
+  } else {
+    snprintf(temp, len, "./bifrost_%s_%s.txt", method_name, operation);
+  }
 
   return fopen(temp, "w");
 }
@@ -603,50 +607,44 @@ FILE* generate_file_handle(char* method_name, char* operation) {
 void increment_array_perf(SimpleArrayComputationIf *client, 
                           struct sockaddr_in6 *targetIP, int iterations, 
                           int max_size, int incr, char* method_name) {
-  uint64_t alloc_times = 0, read_times = 0, write_times = 0, free_times = 0, rpc_start_times = 0, rpc_end_times = 0;
-  FILE* alloc_file = generate_file_handle(method_name, "alloc");
-  FILE* read_file = generate_file_handle(method_name, "read");
-  FILE* write_file = generate_file_handle(method_name, "write");
-  FILE* free_file = generate_file_handle(method_name, "free");
-  FILE* rpc_start_file = generate_file_handle(method_name, "rpc_start");
-  FILE* rpc_end_file = generate_file_handle(method_name, "rpc_end");
+  uint64_t alloc_times = 0, read_times = 0, write_times = 0, free_times = 0;
+  FILE* alloc_file = generate_file_handle(method_name, "alloc", -1);
+  FILE* read_file = generate_file_handle(method_name, "read", -1);
+  FILE* write_file = generate_file_handle(method_name, "write", -1);
+  FILE* free_file = generate_file_handle(method_name, "free", -1);
 
   fprintf(alloc_file, "size,avg latency\n");
   fprintf(read_file, "size,avg latency\n");
   fprintf(write_file, "size,avg latency\n");
   fprintf(free_file, "size,avg latency\n");
-  fprintf(rpc_end_file, "size,avg latency\n");
-  fprintf(rpc_start_file, "size,avg latency\n");
 
   for (int s = 0; s < max_size; s+= incr) {
+    FILE* rpc_start_file = generate_file_handle(method_name, "rpc_start", s);
+    FILE* rpc_end_file = generate_file_handle(method_name, "rpc_end", s);
     alloc_times = 0;
     read_times = 0;
     write_times = 0;
     free_times = 0;
-    rpc_start_times = 0;
-    rpc_end_times = 0;
     for (int i = 0; i < iterations; i++) {
       struct result res = test_increment_array(client, s, targetIP, FALSE);
       alloc_times += res.alloc;
       read_times += res.read;
       write_times += res.write;
       free_times += res.free;
-      rpc_start_times += res.rpc_start;
-      rpc_end_times += res.rpc_end;
+      fprintf(rpc_start_file, "%lu\n", res.rpc_start);
+      fprintf(rpc_end_file, "%lu\n", res.rpc_end);
     }
     fprintf(alloc_file, "%d,%lu\n", s, alloc_times / (iterations*1000) );
     fprintf(read_file, "%d,%lu\n", s, read_times / (iterations*1000) );
     fprintf(write_file, "%d,%lu\n", s, write_times / (iterations*1000) );
     fprintf(free_file, "%d,%lu\n", s, free_times / (iterations*1000) );
-    fprintf(rpc_start_file, "%d,%lu\n", s, rpc_start_times / (iterations*1000) );
-    fprintf(rpc_end_file, "%d,%lu\n", s, rpc_end_times / (iterations*1000) );
+    fclose(rpc_start_file);
+    fclose(rpc_end_file);
   }
   fclose(alloc_file);
   fclose(read_file);
   fclose(write_file);
   fclose(free_file);
-  fclose(rpc_start_file);
-  fclose(rpc_end_file);
 }
 
 void add_arrays_perf(SimpleArrayComputationIf *client, 
