@@ -22,6 +22,7 @@
 
 #include <glib-object.h>
 #include <inttypes.h>
+#include <stdio.h>
 
 G_BEGIN_DECLS
 
@@ -74,7 +75,7 @@ struct _ThriftTransportClass
                    const guint32 len, GError **error);
   gboolean (*write_end) (ThriftTransport *transport, GError **error);
   gboolean (*flush) (ThriftTransport *transport, GError **error);
-  gboolean (*record_timestamps) (ThriftTransport *transport, GError **error);
+  gboolean (*record_timestamps) (ThriftTransport *transport, FILE* out, SockOp op);
 };
 
 /* used by THRIFT_TYPE_TRANSPORT */
@@ -146,7 +147,7 @@ gboolean thrift_transport_write_end (ThriftTransport *transport,
 gboolean thrift_transport_flush (ThriftTransport *transport, GError **error);
 
 gboolean thrift_transport_record_timestamps (ThriftTransport *transport, 
-                                             GError **error);
+                                             FILE* out, SockOp op);
 
 /* define error/exception types */
 typedef enum
