@@ -37,6 +37,11 @@
 
 gboolean srand_called = FALSE;
 
+struct result {
+  uint64_t rpc_start;
+  uint64_t rpc_end;
+};
+
 // UTILS --> copied to server b/c it's a pain to create a shared file (build issues)
 void get_args_pointer(struct in6_memaddr *ptr, struct sockaddr_in6 *targetIP) {
   // Get random memory server
@@ -228,7 +233,8 @@ void test_server_functionality(RemoteMemoryTestIf *client) {
   test_server_free(client, res, exception, error, TRUE);
 }
 
-uint64_t test_increment_array(SimpleArrayComputationIf *client, int size, gboolean print) {
+struct result test_increment_array(SimpleArrayComputationIf *client, int size, gboolean print) {
+  struct result res;
   GError *error = NULL;                       // Error (in transport, socket, etc.)
   CallException *exception = NULL;            // Exception (thrown by server)
   GArray* result_array = g_array_new(FALSE, FALSE, sizeof(uint8_t));              // Result pointer
@@ -236,7 +242,6 @@ uint64_t test_increment_array(SimpleArrayComputationIf *client, int size, gboole
   uint8_t incr_val = 1;                       // Value to increment each value in the array by
   GArray* arr = g_array_new(TRUE, TRUE, sizeof(uint8_t));                               // Array to be sent (must be uint8_t to match char size)
   uint8_t* temp = NULL;
-  uint64_t start, rpc_time;
 
   if (print)
     printf("Testing increment_array...\t");
@@ -247,10 +252,10 @@ uint64_t test_increment_array(SimpleArrayComputationIf *client, int size, gboole
 
   g_array_append_vals(arr, temp, arr_len);
 
-  start = getns();
   // CALL RPC
+  res.rpc_start = getns();
   simple_array_computation_if_increment_array(client, &result_array, arr, incr_val, arr_len, &exception, &error);
-  rpc_time = getns() - start;
+  res.rpc_end = getns();
 
   if (print) {
     if (error) {
@@ -284,7 +289,7 @@ uint64_t test_increment_array(SimpleArrayComputationIf *client, int size, gboole
   if (print)
     printf("SUCCESS\n");
 
-  return rpc_time;
+  return res;
 }
 
 uint64_t test_add_arrays(SimpleArrayComputationIf *client, int size, gboolean print) {
@@ -543,19 +548,32 @@ void no_op_perf(SimpleArrayComputationIf *client, int iterations) {
   free(no_op_rpc_times);
 }
 
-void increment_array_perf(SimpleArrayComputationIf *client, int iterations, int max_size, int incr, FILE* outfile) {
-  // uint64_t *increment_array_times = malloc(iterations*sizeof(uint64_t));
-  uint64_t increment_array_total = 0;
+FILE* generate_file_handle(char* method_name, char* operation, int size) {
+  int len = strlen(method_name) + strlen(operation) + 20;
+  char temp[len];
 
-  fprintf(outfile, "size,us latency\n");
+  snprintf(temp, len, "./prelim_results/thrift_%s_%s_%d.txt", method_name, operation, size);
+
+  return fopen(temp, "w");
+}
+
+void increment_array_perf(SimpleArrayComputationIf *client, int iterations, int max_size, int incr, char* method_name) {
+  // uint64_t *increment_array_times = malloc(iterations*sizeof(uint64_t));
+  // uint64_t increment_array_total = 0;
+
+  // fprintf(outfile, "size,us latency\n");
   for (int s = 0; s < max_size; s+=incr) {
-    increment_array_total = 0;
+    FILE* rpc_start_file = generate_file_handle(method_name, "rpc_start", s);
+    FILE* rpc_end_file = generate_file_handle(method_name, "rpc_end", s);
     for (int i = 0; i < iterations; i++) {
-      increment_array_total = test_increment_array(client, s, FALSE);
-      // increment_array_total += increment_array_times[i];
+      struct result res = test_increment_array(client, s, FALSE);
+      fprintf(rpc_start_file, "%lu\n", res.rpc_start);
+      fprintf(rpc_end_file, "%lu\n", res.rpc_end);
     }
     // printf("Average %s latency (%d): "KRED"%lu us\n"RESET, "increment_array", s, increment_array_total / (iterations*1000));
-    fprintf(outfile, "%d,%lu\n", s, increment_array_total / (iterations*1000));
+    // fprintf(outfile, "%d,%lu\n", s, increment_array_total / (iterations*1000));
+    fclose(rpc_start_file);
+    fclose(rpc_end_file);
   }
 
   // free(increment_array_times);
@@ -593,7 +611,7 @@ void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client, SimpleArrayComp
   no_op_perf(arrcomp_client, iterations);
 
   // Call perf test for increment array rpc
-  increment_array_perf(arrcomp_client, iterations, max_size, incr, incrarr_outfile);
+  increment_array_perf(arrcomp_client, iterations, max_size, incr, "incr_arr");
 
   // Call perf test for add arrays
   add_arrays_perf(arrcomp_client, iterations, max_size, incr, addarr_outfile);

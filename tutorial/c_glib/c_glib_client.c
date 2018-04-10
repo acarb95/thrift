@@ -592,13 +592,13 @@ void no_op_perf(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP,
 }
 
 FILE* generate_file_handle(char* method_name, char* operation, int size) {
-  int len = strlen(method_name) + strlen(operation) + 16;
+  int len = strlen(method_name) + strlen(operation) + 20;
   char temp[len];
 
   if (size > -1) {
-    snprintf(temp, len, "./bifrost_%s_%s_%d.txt", method_name, operation, size);
+    snprintf(temp, len, "./prelim_results/bifrost_%s_%s_%d.txt", method_name, operation, size);
   } else {
-    snprintf(temp, len, "./bifrost_%s_%s.txt", method_name, operation);
+    snprintf(temp, len, "./prelim_results/bifrost_%s_%s.txt", method_name, operation);
   }
 
   return fopen(temp, "w");
