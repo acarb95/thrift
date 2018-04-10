@@ -21,6 +21,7 @@
 #define _THRIFT_TRANSPORT_H
 
 #include <glib-object.h>
+#include <inttypes.h>
 
 G_BEGIN_DECLS
 
