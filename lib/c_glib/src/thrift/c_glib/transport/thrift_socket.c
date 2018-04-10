@@ -284,12 +284,12 @@ thrift_socket_record_timestamps (ThriftTransport *transport,
 
   switch (op) {
     case THRIFT_PERF_RECV:
-      size = socket->recv_timestamps->size;
-      arr = socket->recv_timestamps;
+      size = socket->recv_timestamp->size;
+      arr = socket->recv_timestamp;
       break;
     case THRIFT_PERF_SEND:
-      size = socket->send_timestamps->size;
-      arr = socket->send_timestamps;
+      size = socket->send_timestamp->size;
+      arr = socket->send_timestamp;
       break;
     default:
       return FALSE;
