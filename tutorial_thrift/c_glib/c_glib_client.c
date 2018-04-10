@@ -602,9 +602,6 @@ void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client, SimpleArrayComp
   printf("Starting add arrays performance test...\n");
   // Call perf test for add arrays
   add_arrays_perf(arrcomp_client, iterations, max_size, incr, "add_arr");
-
-  fclose(incrarr_outfile);
-  fclose(addarr_outfile);
 }
 
 int main (int argc, char *argv[]) {
