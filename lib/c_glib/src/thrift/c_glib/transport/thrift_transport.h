@@ -56,6 +56,12 @@ struct _ThriftTransport
 
 typedef struct _ThriftTransportClass ThriftTransportClass;
 
+typedef enum
+{
+  THRIFT_PERF_RECV,
+  THRIFT_PERF_SEND
+} ThriftSocketOperation;
+
 /*!
  * Thrift Transport class
  */
@@ -75,7 +81,7 @@ struct _ThriftTransportClass
                    const guint32 len, GError **error);
   gboolean (*write_end) (ThriftTransport *transport, GError **error);
   gboolean (*flush) (ThriftTransport *transport, GError **error);
-  gboolean (*record_timestamps) (ThriftTransport *transport, FILE* out, SockOp op);
+  gboolean (*record_timestamps) (ThriftTransport *transport, FILE* out, ThriftSocketOperation op);
 };
 
 /* used by THRIFT_TYPE_TRANSPORT */
@@ -147,7 +153,7 @@ gboolean thrift_transport_write_end (ThriftTransport *transport,
 gboolean thrift_transport_flush (ThriftTransport *transport, GError **error);
 
 gboolean thrift_transport_record_timestamps (ThriftTransport *transport, 
-                                             FILE* out, SockOp op);
+                                             FILE* out, ThriftSocketOperation op);
 
 /* define error/exception types */
 typedef enum
@@ -160,12 +166,6 @@ typedef enum
   THRIFT_TRANSPORT_ERROR_RECEIVE,
   THRIFT_TRANSPORT_ERROR_CLOSE
 } ThriftTransportError;
-
-typedef enum
-{
-  THRIFT_PERF_RECV,
-  THRIFT_PERF_SEND
-} SockOp;
 
 /* define an error domain for GError to use */
 GQuark thrift_transport_error_quark (void);
@@ -180,7 +180,7 @@ static inline uint64_t getns(void)
 {
     struct timespec ts;
     int ret = clock_gettime(CLOCK_MONOTONIC, &ts);
-    assert(ret == 0);
+    // assert(ret == 0);
     return (((uint64_t)ts.tv_sec) * 1000000000ULL) + ts.tv_nsec;
 }
 
