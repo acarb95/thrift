@@ -561,10 +561,6 @@ FILE* generate_file_handle(char* method_name, char* operation, int size) {
 }
 
 void increment_array_perf(SimpleArrayComputationIf *client, int iterations, int max_size, int incr, char* method_name) {
-  // uint64_t *increment_array_times = malloc(iterations*sizeof(uint64_t));
-  // uint64_t increment_array_total = 0;
-
-  // fprintf(outfile, "size,us latency\n");
   for (int s = 0; s < max_size; s+=incr) {
     FILE* rpc_start_file = generate_file_handle(method_name, "rpc_start", s);
     FILE* rpc_end_file = generate_file_handle(method_name, "rpc_end", s);
@@ -573,51 +569,39 @@ void increment_array_perf(SimpleArrayComputationIf *client, int iterations, int 
       fprintf(rpc_start_file, "%lu\n", res.rpc_start);
       fprintf(rpc_end_file, "%lu\n", res.rpc_end);
     }
-    // printf("Average %s latency (%d): "KRED"%lu us\n"RESET, "increment_array", s, increment_array_total / (iterations*1000));
-    // fprintf(outfile, "%d,%lu\n", s, increment_array_total / (iterations*1000));
     fclose(rpc_start_file);
     fclose(rpc_end_file);
   }
-
-  // free(increment_array_times);
 }
 
-void add_arrays_perf(SimpleArrayComputationIf *client, int iterations, int max_size, int incr, FILE* outfile) {
-  // uint64_t *add_arrays_times = malloc(iterations*sizeof(uint64_t));
-  uint64_t add_arrays_total = 0;
-
-  fprintf(outfile, "size,us latency\n");
+void add_arrays_perf(SimpleArrayComputationIf *client, int iterations, int max_size, int incr, char* method_name) {
   for (int s = 0; s < max_size; s+=incr) {
-    add_arrays_total = 0;
+    FILE* rpc_start_file = generate_file_handle(method_name, "rpc_start", s);
+    FILE* rpc_end_file = generate_file_handle(method_name, "rpc_end", s);
     for (int i = 0; i < iterations; i++) {
-      add_arrays_total = test_add_arrays(client, s, FALSE);
-      // add_arrays_total += add_arrays_times[i];
+      struct result res = test_add_arrays(client, s, FALSE);
+      fprintf(rpc_start_file, "%lu\n", res.rpc_start);
+      fprintf(rpc_end_file, "%lu\n", res.rpc_end);
     }
-    // printf("Average %s latency (%d): "KRED"%lu us\n"RESET, "add_arrays", s, add_arrays_total / (iterations*1000));
-    fprintf(outfile, "%d,%lu\n", s, add_arrays_total / (iterations*1000));
+    fclose(rpc_start_file);
+    fclose(rpc_end_file);
   }
-
-
-  // free(add_arrays_times);
 }
 
 void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client, SimpleArrayComputationIf *arrcomp_client, int iterations, int max_size, int incr) {
-  FILE* incrarr_outfile = fopen("./incr_array_results.csv", "w");
-  FILE* addarr_outfile = fopen("./add_array_results.csv", "w");
-
   microbenchmark_perf(remmem_client, iterations);
 
-  // TODO: debug, only the first one of these will work consistently, then the server seg faults
-  // on a write_rmem. We might be running out of memory somewhere?
-
+  printf("Starting no-op performance test...\n");
   // Call perf test for no-op RPC
   no_op_perf(arrcomp_client, iterations);
 
+  printf("Starting increment array performance test...\n");
   // Call perf test for increment array rpc
   increment_array_perf(arrcomp_client, iterations, max_size, incr, "incr_arr");
 
+  printf("Starting add arrays performance test...\n");
   // Call perf test for add arrays
-  add_arrays_perf(arrcomp_client, iterations, max_size, incr, addarr_outfile);
+  add_arrays_perf(arrcomp_client, iterations, max_size, incr, "add_arr");
 
   fclose(incrarr_outfile);
   fclose(addarr_outfile);

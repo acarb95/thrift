@@ -346,14 +346,18 @@ uint64_t test_add_arrays(SimpleArrayComputationIf *client, int size, struct sock
   uint8_t *arr1;                              // Array 1 to be added
   uint8_t *arr2;                              // Array 2 to be added
   int arrays_len = size;                        // Size of array to be sent
-  uint64_t start, rpc_time;
+  struct result res;
+  uint64_t start;
+  res.free = 0;
 
   if (print)
     printf("Testing add_arrays...\t\t");
 
   // Get pointers for arrays
+  start = getns();
   get_args_pointer(&arg1_addr, targetIP);
   get_args_pointer(&arg2_addr, targetIP);
+  res.alloc = getns() - end;
 
   // Populate arrays
   arr1 = malloc(arrays_len*sizeof(uint8_t));
@@ -368,17 +372,19 @@ uint64_t test_add_arrays(SimpleArrayComputationIf *client, int size, struct sock
   memcpy(temp2, arr2, arrays_len);
 
   // Write arrays to shared memory
+  start = getns();
   write_rmem(targetIP, (char*) temp1, &arg1_addr);
   write_rmem(targetIP, (char*) temp2, &arg2_addr);
+  res.write = getns() - start;
 
   // Marshall shared pointer addresses
   marshall_shmem_ptr(&arg1_ptr, &arg1_addr);
   marshall_shmem_ptr(&arg2_ptr, &arg2_addr);
 
   // CALL RPC
-  start = getns();
+  res.rpc_start = getns();
   simple_array_computation_if_add_arrays(client, &result_ptr, arg1_ptr, arg2_ptr, arrays_len, &exception, &error);
-  rpc_time = getns() - start;
+  res.rpc_end = getns();
 
   if (error) {
     printf ("ERROR: %s\n", error->message);
@@ -401,7 +407,9 @@ uint64_t test_add_arrays(SimpleArrayComputationIf *client, int size, struct sock
     char* result_arr = malloc(arrays_len);
 
     // Read in result array
+    start = getns();
     get_rmem(result_arr, arrays_len, targetIP, &result_addr);
+    res.read = getns() - start;
 
     if (print) {
       // Make sure the server returned the correct result
@@ -418,19 +426,23 @@ uint64_t test_add_arrays(SimpleArrayComputationIf *client, int size, struct sock
     }
 cleanupres:
     free(result_arr);
+    start = getns();
     free_rmem(targetIP, &result_addr);
+    res.free += getns() - start;
   }
 
   // Free malloc'd and GByteArray memory
   free(arr1);
   free(arr2);
+  start = getns();
   free_rmem(targetIP, &arg1_addr);    // Free the shared memory
   free_rmem(targetIP, &arg2_addr);    // Free the shared memory
+  res.free += getns() - start;
   // g_byte_array_free(arg1_ptr, TRUE);  // We allocated this, so we free it
   // g_byte_array_free(arg2_ptr, TRUE);  // We allocated this, so we free it
   // g_byte_array_unref(result_ptr);     // We only received this, so we dereference it
 
-  return rpc_time;
+  return res;
 }
 
 void mat_multiply(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP) {
@@ -653,23 +665,45 @@ void increment_array_perf(SimpleArrayComputationIf *client,
 
 void add_arrays_perf(SimpleArrayComputationIf *client, 
                      struct sockaddr_in6 *targetIP, int iterations, 
-                     int max_size, int incr, FILE* outfile) {
-  // uint64_t *add_arrays_times = malloc(iterations*sizeof(uint64_t));
-  uint64_t add_arrays_total = 0;
+                     int max_size, int incr, char* method_name) {
+  uint64_t alloc_times = 0, read_times = 0, write_times = 0, free_times = 0;
+  FILE* alloc_file = generate_file_handle(method_name, "alloc", -1);
+  FILE* read_file = generate_file_handle(method_name, "read", -1);
+  FILE* write_file = generate_file_handle(method_name, "write", -1);
+  FILE* free_file = generate_file_handle(method_name, "free", -1);
 
-  fprintf(outfile, "size,us latency\n");
+  fprintf(alloc_file, "size,avg latency\n");
+  fprintf(read_file, "size,avg latency\n");
+  fprintf(write_file, "size,avg latency\n");
+  fprintf(free_file, "size,avg latency\n");
+
   for (int s = 0; s < max_size; s+= incr) {
-    add_arrays_total = 0;
+    FILE* rpc_start_file = generate_file_handle(method_name, "rpc_start", s);
+    FILE* rpc_end_file = generate_file_handle(method_name, "rpc_end", s);
+    alloc_times = 0;
+    read_times = 0;
+    write_times = 0;
+    free_times = 0;
     for (int i = 0; i < iterations; i++) {
-      add_arrays_total += test_add_arrays(client, s, targetIP, FALSE);
-       // add_arrays_times[i];
+      struct result res = test_add_arrays(client, s, targetIP, FALSE);
+      alloc_times += res.alloc;
+      read_times += res.read;
+      write_times += res.write;
+      free_times += res.free;
+      fprintf(rpc_start_file, "%lu\n", res.rpc_start);
+      fprintf(rpc_end_file, "%lu\n", res.rpc_end);
     }
-    // printf("Average %s latency (%d): "KRED"%lu us\n"RESET, "add_arrays", s, add_arrays_total / (iterations*1000));
-    fprintf(outfile, "%d,%lu\n",s, add_arrays_total / (iterations*1000) );
+    fprintf(alloc_file, "%d,%lu\n", s, alloc_times / (iterations*1000) );
+    fprintf(read_file, "%d,%lu\n", s, read_times / (iterations*1000) );
+    fprintf(write_file, "%d,%lu\n", s, write_times / (iterations*1000) );
+    fprintf(free_file, "%d,%lu\n", s, free_times / (iterations*1000) );
+    fclose(rpc_start_file);
+    fclose(rpc_end_file);
   }
-
-
-  // free(add_arrays_times);
+  fclose(alloc_file);
+  fclose(read_file);
+  fclose(write_file);
+  fclose(free_file);
 }
 
 void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client, 
@@ -677,9 +711,6 @@ void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client,
                               struct sockaddr_in6 *targetIP, int iterations,
                               int max_size, int incr) {
   microbenchmark_perf(remmem_client, iterations);
-
-  FILE* incrarr_outfile = fopen("./incr_array_results.csv", "w");
-  FILE* addarr_outfile = fopen("./add_array_results.csv", "w");
 
   // TODO: debug, only the first one of these will work consistently, then the server seg faults
   // on a write_rmem. We might be running out of memory somewhere?
@@ -695,9 +726,6 @@ void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client,
   printf("Starting add arrays performance test...\n");
   // Call perf test for add arrays
   add_arrays_perf(arrcomp_client, targetIP, iterations, max_size, incr, "add_arr");
-
-  fclose(incrarr_outfile);
-  fclose(addarr_outfile);
 }
 
 int main (int argc, char *argv[]) {
