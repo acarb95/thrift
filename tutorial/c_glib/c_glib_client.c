@@ -357,7 +357,7 @@ struct result test_add_arrays(SimpleArrayComputationIf *client, int size, struct
   start = getns();
   get_args_pointer(&arg1_addr, targetIP);
   get_args_pointer(&arg2_addr, targetIP);
-  res.alloc = getns() - end;
+  res.alloc = getns() - start;
 
   // Populate arrays
   arr1 = malloc(arrays_len*sizeof(uint8_t));
