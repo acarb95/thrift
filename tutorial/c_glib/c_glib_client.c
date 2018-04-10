@@ -690,6 +690,8 @@ void add_arrays_perf(SimpleArrayComputationIf *client,
   for (int s = 0; s < max_size; s+= incr) {
     FILE* rpc_start_file = generate_file_handle(method_name, "rpc_start", s);
     FILE* rpc_end_file = generate_file_handle(method_name, "rpc_end", s);
+    FILE* send_file = generate_file_handle(method_name, "c1_send", s);
+    FILE* recv_file = generate_file_handle(method_name, "c1_recv", s);
     alloc_times = 0;
     read_times = 0;
     write_times = 0;
@@ -707,6 +709,10 @@ void add_arrays_perf(SimpleArrayComputationIf *client,
     fprintf(read_file, "%d,%lu\n", s, read_times / (iterations*1000) );
     fprintf(write_file, "%d,%lu\n", s, write_times / (iterations*1000) );
     fprintf(free_file, "%d,%lu\n", s, free_times / (iterations*1000) );
+    thrift_protocol_flush_timestamps(arrcomp_protocol, send_file, THRIFT_PERF_SEND, TRUE);
+    thrift_protocol_flush_timestamps(arrcomp_protocol, recv_file, THRIFT_PERF_RECV, TRUE);
+    fclose(send_file);
+    fclose(recv_file);
     fclose(rpc_start_file);
     fclose(rpc_end_file);
   }
@@ -729,9 +735,15 @@ void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client,
   // Call perf test for no-op RPC
   no_op_perf(arrcomp_client, targetIP, iterations, max_size, incr);
 
+  thrift_protocol_flush_timestamps(arrcomp_protocol, NULL, THRIFT_PERF_SEND, FALSE);
+  thrift_protocol_flush_timestamps(arrcomp_protocol, NULL, THRIFT_PERF_RECV, FALSE);
+
   printf("Starting increment array performance test...\n");
   // Call perf test for increment array rpc
   increment_array_perf(arrcomp_client, targetIP, iterations, max_size, incr, "incr_arr");
+
+  thrift_protocol_flush_timestamps(arrcomp_protocol, NULL, THRIFT_PERF_SEND, FALSE);
+  thrift_protocol_flush_timestamps(arrcomp_protocol, NULL, THRIFT_PERF_RECV, FALSE);
 
   printf("Starting add arrays performance test...\n");
   // Call perf test for add arrays
