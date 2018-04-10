@@ -566,8 +566,8 @@ FILE* generate_file_handle(char* method_name, char* operation, int size) {
 void increment_array_perf(SimpleArrayComputationIf *client, int iterations, int max_size, int incr, char* method_name) {
   for (int s = 0; s < max_size; s+=incr) {
     FILE* rpc_start_file = generate_file_handle(method_name, "rpc_start", s);
-    FILE* send_file = generate_file_handle(method_name, "send", s);
-    FILE* recv_file = generate_file_handle(method_name, "recv", s);
+    FILE* send_file = generate_file_handle(method_name, "c1_send", s);
+    FILE* recv_file = generate_file_handle(method_name, "c1_recv", s);
     FILE* rpc_end_file = generate_file_handle(method_name, "rpc_end", s);
     for (int i = 0; i < iterations; i++) {
       struct result res = test_increment_array(client, s, FALSE);
@@ -586,8 +586,8 @@ void increment_array_perf(SimpleArrayComputationIf *client, int iterations, int 
 void add_arrays_perf(SimpleArrayComputationIf *client, int iterations, int max_size, int incr, char* method_name) {
   for (int s = 0; s < max_size; s+=incr) {
     FILE* rpc_start_file = generate_file_handle(method_name, "rpc_start", s);
-    FILE* send_file = generate_file_handle(method_name, "send", s);
-    FILE* recv_file = generate_file_handle(method_name, "recv", s);
+    FILE* send_file = generate_file_handle(method_name, "c1_send", s);
+    FILE* recv_file = generate_file_handle(method_name, "c1_recv", s);
     FILE* rpc_end_file = generate_file_handle(method_name, "rpc_end", s);
     for (int i = 0; i < iterations; i++) {
       struct result res = test_add_arrays(client, s, FALSE);

@@ -640,8 +640,8 @@ void increment_array_perf(SimpleArrayComputationIf *client,
   for (int s = 0; s < max_size; s+= incr) {
     FILE* rpc_start_file = generate_file_handle(method_name, "rpc_start", s);
     FILE* rpc_end_file = generate_file_handle(method_name, "rpc_end", s);
-    FILE* send_file = generate_file_handle(method_name, "send", s);
-    FILE* recv_file = generate_file_handle(method_name, "recv", s);
+    FILE* send_file = generate_file_handle(method_name, "c1_send", s);
+    FILE* recv_file = generate_file_handle(method_name, "c1_recv", s);
     alloc_times = 0;
     read_times = 0;
     write_times = 0;
