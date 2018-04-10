@@ -37,6 +37,9 @@
 
 gboolean srand_called = FALSE;
 
+ThriftSocket *remmem_socket;
+ThriftSocket *arrcomp_socket;
+
 struct result {
   uint64_t rpc_start;
   uint64_t rpc_end;
@@ -563,13 +566,19 @@ FILE* generate_file_handle(char* method_name, char* operation, int size) {
 void increment_array_perf(SimpleArrayComputationIf *client, int iterations, int max_size, int incr, char* method_name) {
   for (int s = 0; s < max_size; s+=incr) {
     FILE* rpc_start_file = generate_file_handle(method_name, "rpc_start", s);
+    FILE* send_file = generate_file_handle(method_name, "send", s);
+    FILE* recv_file = generate_file_handle(method_name, "recv", s);
     FILE* rpc_end_file = generate_file_handle(method_name, "rpc_end", s);
     for (int i = 0; i < iterations; i++) {
       struct result res = test_increment_array(client, s, FALSE);
       fprintf(rpc_start_file, "%lu\n", res.rpc_start);
       fprintf(rpc_end_file, "%lu\n", res.rpc_end);
     }
+    record_timestamps(arrcomp_socket, send_file, THRIFT_PERF_SEND);
+    record_timestamps(arrcomp_socket, recv_file, THRIFT_PERF_RECV);
     fclose(rpc_start_file);
+    fclose(send_file);
+    fclose(recv_file);
     fclose(rpc_end_file);
   }
 }
@@ -577,13 +586,20 @@ void increment_array_perf(SimpleArrayComputationIf *client, int iterations, int 
 void add_arrays_perf(SimpleArrayComputationIf *client, int iterations, int max_size, int incr, char* method_name) {
   for (int s = 0; s < max_size; s+=incr) {
     FILE* rpc_start_file = generate_file_handle(method_name, "rpc_start", s);
+    FILE* send_file = generate_file_handle(method_name, "send", s);
+    FILE* recv_file = generate_file_handle(method_name, "recv", s);
     FILE* rpc_end_file = generate_file_handle(method_name, "rpc_end", s);
     for (int i = 0; i < iterations; i++) {
       struct result res = test_add_arrays(client, s, FALSE);
       fprintf(rpc_start_file, "%lu\n", res.rpc_start);
       fprintf(rpc_end_file, "%lu\n", res.rpc_end);
     }
+    // socket flush of timestamps
+    record_timestamps(arrcomp_socket, send_file, THRIFT_PERF_SEND);
+    record_timestamps(arrcomp_socket, recv_file, THRIFT_PERF_RECV);
     fclose(rpc_start_file);
+    fclose(send_file);
+    fclose(recv_file);
     fclose(rpc_end_file);
   }
 }
@@ -605,12 +621,10 @@ void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client, SimpleArrayComp
 }
 
 int main (int argc, char *argv[]) {
-  ThriftSocket *remmem_socket;
   ThriftTransport *remmem_transport;
   ThriftProtocol *remmem_protocol;
   RemoteMemoryTestIf *remmem_client;
 
-  ThriftSocket *arrcomp_socket;
   ThriftTransport *arrcomp_transport;
   ThriftProtocol *arrcomp_protocol;
   SimpleArrayComputationIf *arrcomp_client;

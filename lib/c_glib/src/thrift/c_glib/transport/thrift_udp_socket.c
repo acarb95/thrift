@@ -25,6 +25,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <time.h>
 
 #include <thrift/c_glib/thrift.h>
 #include <thrift/c_glib/transport/thrift_transport.h>
@@ -215,33 +216,6 @@ thrift_udp_socket_close (ThriftTransport *transport, GError **error)
 {
   ThriftUDPSocket *socket = THRIFT_UDP_SOCKET (transport);
 
-  // // If this is not a server socket, we need to notify the server we are closing
-  // if (!THRIFT_UDP_SOCKET(transport)->server) {
-  //   // NOTE: this is reliant on the binary_protocol, which violates the abstraction
-  //   // layers thrift is built upon. It is just a hack to make things work.
-
-  //   // Create close command (T_CLOSE)
-  //   gint32 version = (THRIFT_BINARY_PROTOCOL_VERSION_1)
-  //                    | ((gint32) T_CLOSE);
-  //   gchar *name = "";
-  //   gint32 len = 0;
-  //   gint32 seqid = 0;
-
-  //   GByteArray* buf = g_byte_array_new();
-
-  //   // Construct the message
-  //   buf = g_byte_array_append(buf, (const gpointer) &version, 4);
-  //   buf = g_byte_array_append(buf, (const gpointer) &len, 4);
-  //   buf = g_byte_array_append(buf, (const gpointer) name, len);
-  //   buf = g_byte_array_append(buf, (const gpointer) &seqid, 4);
-
-  //   // Write the message
-  //   THRIFT_TRANSPORT_GET_CLASS(transport)->write(transport, buf->data, buf->len, error);
-
-  //   // Free the message
-  //   g_byte_array_free(buf, TRUE);
-  // }
-
   if (close (socket->sd) == -1)
   {
     g_set_error (error, THRIFT_TRANSPORT_ERROR, THRIFT_TRANSPORT_ERROR_CLOSE,
@@ -291,6 +265,9 @@ thrift_udp_socket_read (ThriftTransport *transport, gpointer buf,
   // Receive the entire message from the socket
   // g_message("Call recvmsg");
   ret = recvmsg (socket->sd, &message, 0);
+  uint64_t t = getns();
+  socket->recv_timestamp = g_array_append_val(socket->recv_timestamp, t);
+
   if (ret <= 0)
   {
     g_set_error (error, THRIFT_TRANSPORT_ERROR,
@@ -364,6 +341,9 @@ thrift_udp_socket_write (ThriftTransport *transport, const gpointer buf,
     sent += ret;
   }
 
+  uint64_t t = getns();
+  socket->send_timestamp = g_array_append_val(socket->send_timestamp, t);
+
   return TRUE;
 }
 
@@ -389,6 +369,33 @@ thrift_udp_socket_flush (ThriftTransport *transport, GError **error)
   return TRUE;
 }
 
+gboolean
+thrift_udp_socket_record_timestamps (ThriftTransport *transport, 
+                                 FILE* out, SocketOp op) {
+  ThriftSocket *socket = THRIFT_SOCKET(transport);
+  int size = 0;
+  GArray *arr;
+
+  switch (op) {
+    case THRIFT_PERF_RECV:
+      size = socket->recv_timestamps->size;
+      arr = socket->recv_timestamps;
+      break;
+    case THRIFT_PERF_SEND:
+      size = socket->send_timestamps->size;
+      arr = socket->send_timestamps;
+      break;
+    default:
+      return FALSE;
+  }
+
+  for(int i = 0; i < size; i++) {
+    fprintf(out, "%lu\n", g_array_index(arr, guint64, i));
+  }
+
+  return TRUE;
+}
+
 /* initializes the instance */
 static void
 thrift_udp_socket_init (ThriftUDPSocket *socket)
@@ -401,6 +408,8 @@ thrift_udp_socket_init (ThriftUDPSocket *socket)
   socket->conn_sock = (struct sockaddr_in*)malloc(sizeof(struct sockaddr_in));
   socket->conn_size = sizeof(struct sockaddr_in);
 #endif
+  socket->recv_timestamp = g_array_new(FALSE, TRUE, sizeof(guint64));
+  socket->send_timestamp = g_array_new(FALSE, TRUE, sizeof(guint64));
 }
 
 /* destructor */
@@ -426,6 +435,9 @@ thrift_udp_socket_finalize (GObject *object)
   }
   socket->conn_size = 0;
   socket->conn_sock = NULL;
+
+  g_array_free(socket->recv_timestamp, TRUE);
+  g_array_free(socket->send_timestamp, TRUE);
 }
 
 // TODO: add buf size as a param
@@ -542,4 +554,5 @@ thrift_udp_socket_class_init (ThriftUDPSocketClass *cls)
   ttc->write = thrift_udp_socket_write;
   ttc->write_end = thrift_udp_socket_write_end;
   ttc->flush = thrift_udp_socket_flush;
+  ttc->record_timestamps = thrift_udp_socket_record_timestamps;
 }

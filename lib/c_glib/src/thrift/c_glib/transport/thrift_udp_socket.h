@@ -65,6 +65,8 @@ struct _ThriftUDPSocket
   int sd;                         // The socket descriptor
   guint8 *buf;                    // Unused
   guint32 buf_size;               // Unused
+  GArray *recv_timestamp;
+  GArray *send_timestamp;
 };
 
 typedef struct _ThriftUDPSocketClass ThriftUDPSocketClass;
