@@ -553,7 +553,9 @@ FILE* generate_file_handle(char* method_name, char* operation, int size) {
   char temp[len];
   printf("Length: %d\n", len);
 
-  snprintf(temp, len, "./prelim_results/thrift_%s_%s_%d.txt", method_name, operation, size);
+  int wrote = snprintf(temp, len, "./prelim_results/thrift_%s_%s_%d.txt", method_name, operation, size);
+
+  printf("wrote: %d\n", wrote);
 
   return fopen(temp, "w");
 }
