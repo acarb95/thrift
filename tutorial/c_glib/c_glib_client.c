@@ -592,7 +592,7 @@ void no_op_perf(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP,
 }
 
 FILE* generate_file_handle(char* method_name, char* operation, int size) {
-  int len = strlen(method_name) + strlen(operation) + 20;
+  int len = strlen(method_name) + strlen(operation) + strlen("./prelim_results/bifrost___.txt");
   char temp[len];
 
   if (size > -1) {
