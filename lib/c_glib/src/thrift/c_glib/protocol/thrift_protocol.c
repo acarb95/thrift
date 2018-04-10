@@ -544,6 +544,8 @@ static void
 thrift_protocol_init (ThriftProtocol *protocol)
 {
   protocol->transport = NULL;
+  protocol->recv_timestamp = g_array_new(FALSE, TRUE, sizeof(guint64));
+  protocol->send_timestamp = g_array_new(FALSE, TRUE, sizeof(guint64));
 }
 
 static void
