@@ -55,11 +55,11 @@ struct _ThriftTransport
 
 typedef struct _ThriftTransportClass ThriftTransportClass;
 
-typedef enum
-{
-  THRIFT_PERF_RECV,
-  THRIFT_PERF_SEND
-} ThriftSocketOperation;
+// typedef enum
+// {
+//   THRIFT_PERF_RECV,
+//   THRIFT_PERF_SEND
+// } ThriftSocketOperation;
 
 /*!
  * Thrift Transport class
@@ -80,8 +80,8 @@ struct _ThriftTransportClass
                    const guint32 len, GError **error);
   gboolean (*write_end) (ThriftTransport *transport, GError **error);
   gboolean (*flush) (ThriftTransport *transport, GError **error);
-  gboolean (*record_timestamps) (ThriftTransport *transport, FILE* out, 
-                                 ThriftSocketOperation op, gboolean write);
+  // gboolean (*record_timestamps) (ThriftTransport *transport, FILE* out, 
+  //                                ThriftSocketOperation op, gboolean write);
 };
 
 /* used by THRIFT_TYPE_TRANSPORT */
@@ -152,10 +152,10 @@ gboolean thrift_transport_write_end (ThriftTransport *transport,
  */
 gboolean thrift_transport_flush (ThriftTransport *transport, GError **error);
 
-gboolean thrift_transport_record_timestamps (ThriftTransport *transport, 
-                                             FILE* out, 
-                                             ThriftSocketOperation op,
-                                             gboolean write);
+// gboolean thrift_transport_record_timestamps (ThriftTransport *transport, 
+//                                              FILE* out, 
+//                                              ThriftSocketOperation op,
+//                                              gboolean write);
 
 /* define error/exception types */
 typedef enum

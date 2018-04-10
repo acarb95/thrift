@@ -371,41 +371,41 @@ thrift_udp_socket_flush (ThriftTransport *transport, GError **error)
   return TRUE;
 }
 
-gboolean
-thrift_udp_socket_record_timestamps (ThriftTransport *transport, 
-                                     FILE* out, ThriftSocketOperation op,
-                                     gboolean write) {
-  THRIFT_UNUSED_VAR(transport);
-  THRIFT_UNUSED_VAR(out);
-  THRIFT_UNUSED_VAR(op);
-  THRIFT_UNUSED_VAR(write);
-  // ThriftUDPSocket *socket = THRIFT_UDP_SOCKET(transport);
-  // int size = 0;
-  // GArray *arr;
+// gboolean
+// thrift_udp_socket_record_timestamps (ThriftTransport *transport, 
+//                                      FILE* out, ThriftSocketOperation op,
+//                                      gboolean write) {
+//   THRIFT_UNUSED_VAR(transport);
+//   THRIFT_UNUSED_VAR(out);
+//   THRIFT_UNUSED_VAR(op);
+//   THRIFT_UNUSED_VAR(write);
+//   // ThriftUDPSocket *socket = THRIFT_UDP_SOCKET(transport);
+//   // int size = 0;
+//   // GArray *arr;
 
-  // switch (op) {
-  //   case THRIFT_PERF_RECV:
-  //     size = socket->recv_timestamp->len;
-  //     arr = socket->recv_timestamp;
-  //     break;
-  //   case THRIFT_PERF_SEND:
-  //     size = socket->send_timestamp->len;
-  //     arr = socket->send_timestamp;
-  //     break;
-  //   default:
-  //     return FALSE;
-  // }
+//   // switch (op) {
+//   //   case THRIFT_PERF_RECV:
+//   //     size = socket->recv_timestamp->len;
+//   //     arr = socket->recv_timestamp;
+//   //     break;
+//   //   case THRIFT_PERF_SEND:
+//   //     size = socket->send_timestamp->len;
+//   //     arr = socket->send_timestamp;
+//   //     break;
+//   //   default:
+//   //     return FALSE;
+//   // }
   
-  // if (write) {
-  //   for(int i = 0; i < size; i++) {
-  //     fprintf(out, "%lu\n", g_array_index(arr, guint64, i));
-  //   }
-  // }
+//   // if (write) {
+//   //   for(int i = 0; i < size; i++) {
+//   //     fprintf(out, "%lu\n", g_array_index(arr, guint64, i));
+//   //   }
+//   // }
 
-  // g_array_remove_range(arr, 0, size);
+//   // g_array_remove_range(arr, 0, size);
 
-  return TRUE;
-}
+//   return TRUE;
+// }
 
 /* initializes the instance */
 static void
@@ -565,5 +565,5 @@ thrift_udp_socket_class_init (ThriftUDPSocketClass *cls)
   ttc->write = thrift_udp_socket_write;
   ttc->write_end = thrift_udp_socket_write_end;
   ttc->flush = thrift_udp_socket_flush;
-  ttc->record_timestamps = thrift_udp_socket_record_timestamps;
+  // ttc->record_timestamps = thrift_udp_socket_record_timestamps;
 }
