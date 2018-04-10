@@ -372,7 +372,7 @@ thrift_udp_socket_flush (ThriftTransport *transport, GError **error)
 gboolean
 thrift_udp_socket_record_timestamps (ThriftTransport *transport, 
                                      FILE* out, ThriftSocketOperation op) {
-  ThriftSocket *socket = THRIFT_SOCKET(transport);
+  ThriftUDPSocket *socket = THRIFT_UDP_SOCKET(transport);
   int size = 0;
   GArray *arr;
 
