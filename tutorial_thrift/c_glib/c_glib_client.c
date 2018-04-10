@@ -551,6 +551,7 @@ void no_op_perf(SimpleArrayComputationIf *client, int iterations) {
 FILE* generate_file_handle(char* method_name, char* operation, int size) {
   int len = strlen(method_name) + strlen(operation) + strlen("./prelim_results/thrift___.txt" + 10);
   char temp[len];
+  printf("Length: %d\n", len);
 
   snprintf(temp, len, "./prelim_results/thrift_%s_%s_%d.txt", method_name, operation, size);
 
