@@ -597,7 +597,7 @@ FILE* generate_file_handle(char* method_name, char* operation) {
 
   snprintf(temp, len, "./bifrost_%s_%s.txt", method_name, operation);
 
-  return fopen(temp);
+  return fopen(temp, "w");
 }
 
 void increment_array_perf(SimpleArrayComputationIf *client, 
@@ -688,11 +688,11 @@ void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client,
 
   printf("Starting increment array performance test...\n");
   // Call perf test for increment array rpc
-  increment_array_perf(arrcomp_client, targetIP, iterations, max_size, incr, incrarr_outfile);
+  increment_array_perf(arrcomp_client, targetIP, iterations, max_size, incr, "incr_arr");
 
   printf("Starting add arrays performance test...\n");
   // Call perf test for add arrays
-  add_arrays_perf(arrcomp_client, targetIP, iterations, max_size, incr, addarr_outfile);
+  add_arrays_perf(arrcomp_client, targetIP, iterations, max_size, incr, "add_arr");
 
   fclose(incrarr_outfile);
   fclose(addarr_outfile);
