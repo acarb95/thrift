@@ -659,8 +659,8 @@ void increment_array_perf(SimpleArrayComputationIf *client,
     fprintf(read_file, "%d,%lu\n", s, read_times / (iterations*1000) );
     fprintf(write_file, "%d,%lu\n", s, write_times / (iterations*1000) );
     fprintf(free_file, "%d,%lu\n", s, free_times / (iterations*1000) );
-    thrift_transport_record_timestamps(arrcomp_socket, send_file, THRIFT_PERF_SEND);
-    thrift_transport_record_timestamps(arrcomp_socket, recv_file, THRIFT_PERF_RECV);
+    thrift_transport_record_timestamps(arrcomp_socket, send_file, THRIFT_PERF_SEND, TRUE);
+    thrift_transport_record_timestamps(arrcomp_socket, recv_file, THRIFT_PERF_RECV, TRUE);
     fclose(send_file);
     fclose(recv_file);
     fclose(rpc_start_file);
