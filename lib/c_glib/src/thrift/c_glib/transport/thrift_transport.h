@@ -80,7 +80,8 @@ struct _ThriftTransportClass
                    const guint32 len, GError **error);
   gboolean (*write_end) (ThriftTransport *transport, GError **error);
   gboolean (*flush) (ThriftTransport *transport, GError **error);
-  gboolean (*record_timestamps) (ThriftTransport *transport, FILE* out, ThriftSocketOperation op);
+  gboolean (*record_timestamps) (ThriftTransport *transport, FILE* out, 
+                                 ThriftSocketOperation op, gboolean write);
 };
 
 /* used by THRIFT_TYPE_TRANSPORT */
@@ -152,7 +153,9 @@ gboolean thrift_transport_write_end (ThriftTransport *transport,
 gboolean thrift_transport_flush (ThriftTransport *transport, GError **error);
 
 gboolean thrift_transport_record_timestamps (ThriftTransport *transport, 
-                                             FILE* out, ThriftSocketOperation op);
+                                             FILE* out, 
+                                             ThriftSocketOperation op,
+                                             gboolean write);
 
 /* define error/exception types */
 typedef enum

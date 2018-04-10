@@ -85,16 +85,6 @@ thrift_transport_flush (ThriftTransport *transport, GError **error)
   return THRIFT_TRANSPORT_GET_CLASS (transport)->flush (transport, error);
 }
 
-gboolean 
-thrift_transport_record_timestamps (ThriftTransport *transport, 
-                                    FILE* out, 
-                                    ThriftSocketOperation op)
-{
-  return THRIFT_TRANSPORT_GET_CLASS (transport)->record_timestamps(transport,
-                                                                   out,
-                                                                   op);
-}
-
 /* by default, peek returns true if and only if the transport is open */
 static gboolean
 thrift_transport_real_peek (ThriftTransport *transport, GError **error)

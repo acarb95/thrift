@@ -279,7 +279,9 @@ thrift_socket_flush (ThriftTransport *transport, GError **error)
 
 gboolean
 thrift_socket_record_timestamps (ThriftTransport *transport, 
-                                 FILE* out, ThriftSocketOperation op) {
+                                 FILE* out, ThriftSocketOperation op, 
+                                 gboolean write) 
+{
   ThriftSocket *socket = THRIFT_SOCKET(transport);
   int size = 0;
   GArray *arr;
@@ -296,10 +298,14 @@ thrift_socket_record_timestamps (ThriftTransport *transport,
     default:
       return FALSE;
   }
-
-  for(int i = 0; i < size; i++) {
-    fprintf(out, "%lu\n", g_array_index(arr, guint64, i));
+  
+  if (write) {
+    for(int i = 0; i < size; i++) {
+      fprintf(out, "%lu\n", g_array_index(arr, guint64, i));
+    }
   }
+
+  g_array_remove_range(arr, 0, size);
 
   return TRUE;
 }
