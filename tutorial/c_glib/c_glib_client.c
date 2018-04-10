@@ -37,8 +37,9 @@
 
 gboolean srand_called = FALSE;
 
-ThriftUDPSocket *remmem_socket;
-ThriftUDPSocket *arrcomp_socket;
+ThriftProtocol *remmem_protocol;
+ThriftProtocol *arrcomp_protocol;
+
 
 struct result {
   uint64_t alloc;
@@ -659,8 +660,8 @@ void increment_array_perf(SimpleArrayComputationIf *client,
     fprintf(read_file, "%d,%lu\n", s, read_times / (iterations*1000) );
     fprintf(write_file, "%d,%lu\n", s, write_times / (iterations*1000) );
     fprintf(free_file, "%d,%lu\n", s, free_times / (iterations*1000) );
-    thrift_transport_record_timestamps(arrcomp_socket, send_file, THRIFT_PERF_SEND, TRUE);
-    thrift_transport_record_timestamps(arrcomp_socket, recv_file, THRIFT_PERF_RECV, TRUE);
+    thrift_protocol_record_timestamps(arrcomp_protocol, send_file, THRIFT_PERF_SEND, TRUE);
+    thrift_protocol_record_timestamps(arrcomp_protocol, recv_file, THRIFT_PERF_RECV, TRUE);
     fclose(send_file);
     fclose(recv_file);
     fclose(rpc_start_file);
@@ -738,12 +739,12 @@ void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client,
 }
 
 int main (int argc, char *argv[]) {
+  ThriftUDPSocket *remmem_socket;
   ThriftTransport *remmem_transport;
-  ThriftProtocol *remmem_protocol;
   RemoteMemoryTestIf *remmem_client;
 
+  ThriftUDPSocket *arrcomp_socket;
   ThriftTransport *arrcomp_transport;
-  ThriftProtocol *arrcomp_protocol;
   SimpleArrayComputationIf *arrcomp_client;
 
   GError *error = NULL;

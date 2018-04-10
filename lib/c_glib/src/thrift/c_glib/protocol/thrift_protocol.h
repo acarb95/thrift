@@ -87,9 +87,17 @@ struct _ThriftProtocol
 
   /* protected */
   ThriftTransport *transport;
+  GArray *send_timestamp;
+  GArray *recv_timestamp;
 };
 
 typedef struct _ThriftProtocolClass ThriftProtocolClass;
+
+typedef enum
+{
+  THRIFT_PERF_RECV,
+  THRIFT_PERF_SEND
+} ThriftTimestampType;
 
 /*!
  * Thrift Protocol class
@@ -172,12 +180,17 @@ struct _ThriftProtocolClass
   gint32 (*read_string) (ThriftProtocol *protocol, gchar **str, GError **error);
   gint32 (*read_binary) (ThriftProtocol *protocol, gpointer *buf,
                          guint32 *len, GError **error);
+  gint32 (*flush_timestamps) (ThriftProtocol *protocol, FILE* out,
+                              ThriftTimestampType op, gboolean write);
 };
 
 /* used by THRIFT_TYPE_PROTOCOL */
 GType thrift_protocol_get_type (void);
 
 /* virtual public methods */
+gint32 thrift_protocol_flush_timestamps (ThriftProtocol *protocol, FILE* out,
+                              ThriftTimestampType op, gboolean write);
+
 gint32 thrift_protocol_write_message_begin (ThriftProtocol *protocol,
            const gchar *name, const ThriftMessageType message_type,
            const gint32 seqid, GError **error);

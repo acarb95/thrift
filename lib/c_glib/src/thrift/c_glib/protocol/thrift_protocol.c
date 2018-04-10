@@ -66,6 +66,13 @@ thrift_protocol_set_property (GObject *object, guint property_id,
   }
 }
 
+gint32 
+thrift_protocol_flush_timestamps (ThriftProtocol *protocol, FILE* out,
+                                  ThriftTimestampType op, gboolean write)
+{
+  return THRIFT_PROTOCOL_GET_CLASS(protocol)->flush_timestamps(protocol, out,
+                                                               op, write);
+}
 
 gint32
 thrift_protocol_write_message_begin (ThriftProtocol *protocol, 
@@ -525,6 +532,13 @@ thrift_protocol_error_quark (void)
   return g_quark_from_static_string (THRIFT_PROTOCOL_ERROR_DOMAIN);
 }
 
+static void
+thrift_binary_protocol_finalize (GObject *object) {
+  ThriftProtocol *protocol = THRIFT_PROTOCOL(object);
+
+  g_array_free(protocol->recv_timestamp, TRUE);
+  g_array_free(protocol->send_timestamp, TRUE);
+}
 
 static void
 thrift_protocol_init (ThriftProtocol *protocol)
@@ -546,6 +560,8 @@ thrift_protocol_class_init (ThriftProtocolClass *cls)
                            THRIFT_TYPE_TRANSPORT,
                            G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
+  gobject_class->finalize = thrift_protocol_finalize;
+  cls->flush_timestamps = thrift_protocol_flush_timestamps;
   cls->write_message_begin = thrift_protocol_write_message_begin;
   cls->write_message_end = thrift_protocol_write_message_end;
   cls->write_struct_begin = thrift_protocol_write_struct_begin;

@@ -25,6 +25,8 @@
 #include <thrift/c_glib/protocol/thrift_protocol.h>
 #include <thrift/c_glib/protocol/thrift_binary_protocol.h>
 
+#include "../../../../../../../lib/utils.h"
+
 G_DEFINE_TYPE(ThriftBinaryProtocol, thrift_binary_protocol, THRIFT_TYPE_PROTOCOL)
 
 static guint64
@@ -47,6 +49,40 @@ thrift_bitwise_cast_gdouble (guint64 v)
   } u;
   u.from = v;
   return u.to;
+}
+
+gint32 
+thrift_binary_protocol_flush_timestamps (ThriftProtocol *protocol, FILE* out,
+                                         ThriftTimestampType op, 
+                                         gboolean write) 
+{
+  g_return_val_if_fail (THRIFT_IS_BINARY_PROTOCOL (protocol), -1);
+
+  int size = 0;
+  GArray *arr;
+
+  switch (op) {
+    case THRIFT_PERF_RECV:
+      size = protocol->recv_timestamp->len;
+      arr = protocol->recv_timestamp;
+      break;
+    case THRIFT_PERF_SEND:
+      size = protocol->send_timestamp->len;
+      arr = protocol->send_timestamp;
+      break;
+    default:
+      return FALSE;
+  }
+
+  if (write) {
+    for(int i = 0; i < size; i++) {
+      fprintf(out, "%lu\n", g_array_index(arr, guint64, i));
+    }
+  }
+
+  arr = g_array_remove_range(arr, 0, size);
+
+  return TRUE;
 }
 
 gint32
@@ -86,6 +122,8 @@ gint32
 thrift_binary_protocol_write_message_end (ThriftProtocol *protocol,
                                           GError **error)
 {
+  guint64 t = getns();
+  protocol->send_timestamp = g_array_append_val(protocol->send_timestamp, t);
   /* satisfy -Wall */
   THRIFT_UNUSED_VAR (protocol);
   THRIFT_UNUSED_VAR (error);
@@ -449,6 +487,8 @@ gint32
 thrift_binary_protocol_read_message_end (ThriftProtocol *protocol,
                                          GError **error)
 {
+  guint64 t = getns();
+  protocol->recv_timestamp = g_array_append_val(protocol->recv_timestamp, t);
   THRIFT_UNUSED_VAR (protocol);
   THRIFT_UNUSED_VAR (error);
   return 0;
@@ -833,17 +873,30 @@ thrift_binary_protocol_read_binary (ThriftProtocol *protocol,
 }
 
 static void
+thrift_binary_protocol_finalize (GObject *object) {
+  ThriftBinaryProtocol *protocol = THRIFT_BINARY_PROTOCOL(object);
+
+  g_array_free(protocol->recv_timestamp, TRUE);
+  g_array_free(protocol->send_timestamp, TRUE);
+}
+
+static void
 thrift_binary_protocol_init (ThriftBinaryProtocol *protocol)
 {
-  THRIFT_UNUSED_VAR (protocol);
+  // THRIFT_UNUSED_VAR (protocol);
+  protocol->recv_timestamp = g_array_new(FALSE, TRUE, sizeof(guint64));
+  protocol->send_timestamp = g_array_new(FALSE, TRUE, sizeof(guint64));
 }
 
 /* initialize the class */
 static void
 thrift_binary_protocol_class_init (ThriftBinaryProtocolClass *klass)
 {
+  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   ThriftProtocolClass *cls = THRIFT_PROTOCOL_CLASS (klass);
 
+  gobject_class->finalize = thrift_binary_protocol_finalize;
+  cls->flush_timestamps = thrift_binary_protocol_flush_timestamps;
   cls->write_message_begin = thrift_binary_protocol_write_message_begin;
   cls->write_message_end = thrift_binary_protocol_write_message_end;
   cls->write_struct_begin = thrift_binary_protocol_write_struct_begin;

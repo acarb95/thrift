@@ -33,7 +33,7 @@
 #include <thrift/c_glib/protocol/thrift_protocol.h>
 #include <thrift/c_glib/protocol/thrift_binary_protocol.h>
 
-#include "../../../../../../../lib/utils.h"
+// #include "../../../../../../../lib/utils.h"
 
 /* object properties */
 enum _ThriftUDPSocketProperties
@@ -267,8 +267,8 @@ thrift_udp_socket_read (ThriftTransport *transport, gpointer buf,
   // Receive the entire message from the socket
   // g_message("Call recvmsg");
   ret = recvmsg (socket->sd, &message, 0);
-  uint64_t t = getns();
-  socket->recv_timestamp = g_array_append_val(socket->recv_timestamp, t);
+  // uint64_t t = getns();
+  // socket->recv_timestamp = g_array_append_val(socket->recv_timestamp, t);
 
   if (ret <= 0)
   {
@@ -343,8 +343,8 @@ thrift_udp_socket_write (ThriftTransport *transport, const gpointer buf,
     sent += ret;
   }
 
-  uint64_t t = getns();
-  socket->send_timestamp = g_array_append_val(socket->send_timestamp, t);
+  // uint64_t t = getns();
+  // socket->send_timestamp = g_array_append_val(socket->send_timestamp, t);
 
   return TRUE;
 }
@@ -375,30 +375,34 @@ gboolean
 thrift_udp_socket_record_timestamps (ThriftTransport *transport, 
                                      FILE* out, ThriftSocketOperation op,
                                      gboolean write) {
-  ThriftUDPSocket *socket = THRIFT_UDP_SOCKET(transport);
-  int size = 0;
-  GArray *arr;
+  THRIFT_UNUSED_VAR(transport);
+  THRIFT_UNUSED_VAR(out);
+  THRIFT_UNUSED_VAR(op);
+  THRIFT_UNUSED_VAR(write);
+  // ThriftUDPSocket *socket = THRIFT_UDP_SOCKET(transport);
+  // int size = 0;
+  // GArray *arr;
 
-  switch (op) {
-    case THRIFT_PERF_RECV:
-      size = socket->recv_timestamp->len;
-      arr = socket->recv_timestamp;
-      break;
-    case THRIFT_PERF_SEND:
-      size = socket->send_timestamp->len;
-      arr = socket->send_timestamp;
-      break;
-    default:
-      return FALSE;
-  }
+  // switch (op) {
+  //   case THRIFT_PERF_RECV:
+  //     size = socket->recv_timestamp->len;
+  //     arr = socket->recv_timestamp;
+  //     break;
+  //   case THRIFT_PERF_SEND:
+  //     size = socket->send_timestamp->len;
+  //     arr = socket->send_timestamp;
+  //     break;
+  //   default:
+  //     return FALSE;
+  // }
   
-  if (write) {
-    for(int i = 0; i < size; i++) {
-      fprintf(out, "%lu\n", g_array_index(arr, guint64, i));
-    }
-  }
+  // if (write) {
+  //   for(int i = 0; i < size; i++) {
+  //     fprintf(out, "%lu\n", g_array_index(arr, guint64, i));
+  //   }
+  // }
 
-  g_array_remove_range(arr, 0, size);
+  // g_array_remove_range(arr, 0, size);
 
   return TRUE;
 }
@@ -415,8 +419,8 @@ thrift_udp_socket_init (ThriftUDPSocket *socket)
   socket->conn_sock = (struct sockaddr_in*)malloc(sizeof(struct sockaddr_in));
   socket->conn_size = sizeof(struct sockaddr_in);
 #endif
-  socket->recv_timestamp = g_array_new(FALSE, TRUE, sizeof(guint64));
-  socket->send_timestamp = g_array_new(FALSE, TRUE, sizeof(guint64));
+  // socket->recv_timestamp = g_array_new(FALSE, TRUE, sizeof(guint64));
+  // socket->send_timestamp = g_array_new(FALSE, TRUE, sizeof(guint64));
 }
 
 /* destructor */
@@ -443,8 +447,8 @@ thrift_udp_socket_finalize (GObject *object)
   socket->conn_size = 0;
   socket->conn_sock = NULL;
 
-  g_array_free(socket->recv_timestamp, TRUE);
-  g_array_free(socket->send_timestamp, TRUE);
+  // g_array_free(socket->recv_timestamp, TRUE);
+  // g_array_free(socket->send_timestamp, TRUE);
 }
 
 // TODO: add buf size as a param

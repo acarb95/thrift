@@ -58,8 +58,8 @@ struct _ThriftSocket
   guint8 *buf;
   guint32 buf_size;
   guint32 buf_len;
-  GArray *recv_timestamp;
-  GArray *send_timestamp;
+  // GArray *recv_timestamp;
+  // GArray *send_timestamp;
 };
 
 typedef struct _ThriftSocketClass ThriftSocketClass;

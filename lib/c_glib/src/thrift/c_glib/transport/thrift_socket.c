@@ -29,7 +29,7 @@
 #include <thrift/c_glib/transport/thrift_transport.h>
 #include <thrift/c_glib/transport/thrift_socket.h>
 
-#include "../../../../../../../lib/utils.h"
+// #include "../../../../../../../lib/utils.h"
 
 /* object properties */
 enum _ThriftSocketProperties
@@ -208,8 +208,8 @@ thrift_socket_read (ThriftTransport *transport, gpointer buf,
     got += ret;
   }
 
-  uint64_t t = getns();
-  socket->recv_timestamp = g_array_append_val(socket->recv_timestamp, t);
+  // uint64_t t = getns();
+  // socket->recv_timestamp = g_array_append_val(socket->recv_timestamp, t);
 
   return got;
 }
@@ -249,8 +249,8 @@ thrift_socket_write (ThriftTransport *transport, const gpointer buf,
     sent += ret;
   }
 
-  uint64_t t = getns();
-  socket->send_timestamp = g_array_append_val(socket->send_timestamp, t);
+  // uint64_t t = getns();
+  // socket->send_timestamp = g_array_append_val(socket->send_timestamp, t);
 
   return TRUE;
 }
@@ -282,30 +282,34 @@ thrift_socket_record_timestamps (ThriftTransport *transport,
                                  FILE* out, ThriftSocketOperation op, 
                                  gboolean write) 
 {
-  ThriftSocket *socket = THRIFT_SOCKET(transport);
-  int size = 0;
-  GArray *arr;
+  THRIFT_UNUSED_VAR(transport);
+  THRIFT_UNUSED_VAR(out);
+  THRIFT_UNUSED_VAR(op);
+  THRIFT_UNUSED_VAR(write);
+  // ThriftSocket *socket = THRIFT_SOCKET(transport);
+  // int size = 0;
+  // GArray *arr;
 
-  switch (op) {
-    case THRIFT_PERF_RECV:
-      size = socket->recv_timestamp->len;
-      arr = socket->recv_timestamp;
-      break;
-    case THRIFT_PERF_SEND:
-      size = socket->send_timestamp->len;
-      arr = socket->send_timestamp;
-      break;
-    default:
-      return FALSE;
-  }
+  // switch (op) {
+  //   case THRIFT_PERF_RECV:
+  //     size = socket->recv_timestamp->len;
+  //     arr = socket->recv_timestamp;
+  //     break;
+  //   case THRIFT_PERF_SEND:
+  //     size = socket->send_timestamp->len;
+  //     arr = socket->send_timestamp;
+  //     break;
+  //   default:
+  //     return FALSE;
+  // }
 
-  if (write) {
-    for(int i = 0; i < size; i++) {
-      fprintf(out, "%lu\n", g_array_index(arr, guint64, i));
-    }
-  }
+  // if (write) {
+  //   for(int i = 0; i < size; i++) {
+  //     fprintf(out, "%lu\n", g_array_index(arr, guint64, i));
+  //   }
+  // }
 
-  arr = g_array_remove_range(arr, 0, size);
+  // arr = g_array_remove_range(arr, 0, size);
 
   return TRUE;
 }
@@ -315,8 +319,8 @@ static void
 thrift_socket_init (ThriftSocket *socket)
 {
   socket->sd = THRIFT_INVALID_SOCKET;
-  socket->recv_timestamp = g_array_new(FALSE, TRUE, sizeof(guint64));
-  socket->send_timestamp = g_array_new(FALSE, TRUE, sizeof(guint64));
+  // socket->recv_timestamp = g_array_new(FALSE, TRUE, sizeof(guint64));
+  // socket->send_timestamp = g_array_new(FALSE, TRUE, sizeof(guint64));
 }
 
 /* destructor */
@@ -337,8 +341,8 @@ thrift_socket_finalize (GObject *object)
   }
   socket->sd = THRIFT_INVALID_SOCKET;
 
-  g_array_free(socket->recv_timestamp, TRUE);
-  g_array_free(socket->send_timestamp, TRUE);
+  // g_array_free(socket->recv_timestamp, TRUE);
+  // g_array_free(socket->send_timestamp, TRUE);
 }
 
 /* property accessor */
