@@ -533,7 +533,7 @@ thrift_protocol_error_quark (void)
 }
 
 static void
-thrift_binary_protocol_finalize (GObject *object) {
+thrift_protocol_finalize (GObject *object) {
   ThriftProtocol *protocol = THRIFT_PROTOCOL(object);
 
   g_array_free(protocol->recv_timestamp, TRUE);
