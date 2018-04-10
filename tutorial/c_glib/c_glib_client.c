@@ -592,8 +592,8 @@ void no_op_perf(SimpleArrayComputationIf *client, struct sockaddr_in6 *targetIP,
 }
 
 FILE* generate_file_handle(char* method_name, char* operation, int size) {
-  int len = strlen(method_name) + strlen(operation) + strlen("./prelim_results/bifrost___.txt" + 4);
-  printf("Length: %d, method_name: %d, operation: %d, everything else: %d\n", len, strlen(method_name), strlen(operation), strlen("./prelim_results/bifrost___.txt" + 4));
+  int len = strlen(method_name) + strlen(operation) + strlen("./prelim_results/bifrost___.txt") + 4;
+  printf("Length: %d, method_name: %d, operation: %d, everything else: %d\n", len, strlen(method_name), strlen(operation), strlen("./prelim_results/bifrost___.txt") + 4);
   int wrote = 0;
   char temp[len + 1];
 
