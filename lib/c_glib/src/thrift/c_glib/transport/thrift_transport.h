@@ -21,7 +21,6 @@
 #define _THRIFT_TRANSPORT_H
 
 #include <glib-object.h>
-#include <inttypes.h>
 #include <stdio.h>
 
 G_BEGIN_DECLS
@@ -175,13 +174,5 @@ GQuark thrift_transport_error_quark (void);
 #define THRIFT_INVALID_SOCKET (-1)
 
 G_END_DECLS
-
-static inline uint64_t getns(void)
-{
-    struct timespec ts;
-    int ret = clock_gettime(CLOCK_MONOTONIC, &ts);
-    // assert(ret == 0);
-    return (((uint64_t)ts.tv_sec) * 1000000000ULL) + ts.tv_nsec;
-}
 
 #endif /* _THRIFT_TRANSPORT_H */

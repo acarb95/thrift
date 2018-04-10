@@ -33,6 +33,8 @@
 #include <thrift/c_glib/protocol/thrift_protocol.h>
 #include <thrift/c_glib/protocol/thrift_binary_protocol.h>
 
+#include "../../../../../../../lib/utils.h"
+
 /* object properties */
 enum _ThriftUDPSocketProperties
 {
