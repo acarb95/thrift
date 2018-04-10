@@ -549,13 +549,13 @@ void no_op_perf(SimpleArrayComputationIf *client, int iterations) {
 }
 
 FILE* generate_file_handle(char* method_name, char* operation, int size) {
-  int len = strlen(method_name) + strlen(operation) + strlen("./prelim_results/thrift___.txt" + 10);
+  int len = strlen(method_name) + strlen(operation) + strlen("./prelim_results/thrift___.txt") + 4;
   char temp[len];
-  printf("Length: %d\n", len);
+  // printf("Length: %d\n", len);
 
   int wrote = snprintf(temp, len, "./prelim_results/thrift_%s_%s_%d.txt", method_name, operation, size);
 
-  printf("wrote: %d\n", wrote);
+  // printf("wrote: %d\n", wrote);
 
   return fopen(temp, "w");
 }
