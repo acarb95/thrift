@@ -52,6 +52,8 @@ typedef struct _ThriftBinaryProtocol ThriftBinaryProtocol;
 struct _ThriftBinaryProtocol
 {
   ThriftProtocol parent;
+  GArray *send_timestamp;
+  GArray *recv_timestamp;
 };
 
 typedef struct _ThriftBinaryProtocolClass ThriftBinaryProtocolClass;
