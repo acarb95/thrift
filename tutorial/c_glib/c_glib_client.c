@@ -660,8 +660,8 @@ void increment_array_perf(SimpleArrayComputationIf *client,
     fprintf(read_file, "%d,%lu\n", s, read_times / (iterations*1000) );
     fprintf(write_file, "%d,%lu\n", s, write_times / (iterations*1000) );
     fprintf(free_file, "%d,%lu\n", s, free_times / (iterations*1000) );
-    thrift_protocol_record_timestamps(arrcomp_protocol, send_file, THRIFT_PERF_SEND, TRUE);
-    thrift_protocol_record_timestamps(arrcomp_protocol, recv_file, THRIFT_PERF_RECV, TRUE);
+    thrift_protocol_flush_timestamps(arrcomp_protocol, send_file, THRIFT_PERF_SEND, TRUE);
+    thrift_protocol_flush_timestamps(arrcomp_protocol, recv_file, THRIFT_PERF_RECV, TRUE);
     fclose(send_file);
     fclose(recv_file);
     fclose(rpc_start_file);

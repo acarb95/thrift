@@ -574,8 +574,8 @@ void increment_array_perf(SimpleArrayComputationIf *client, int iterations, int 
       fprintf(rpc_start_file, "%lu\n", res.rpc_start);
       fprintf(rpc_end_file, "%lu\n", res.rpc_end);
     }
-    thrift_transport_record_timestamps(arrcomp_socket, send_file, THRIFT_PERF_SEND, TRUE);
-    thrift_transport_record_timestamps(arrcomp_socket, recv_file, THRIFT_PERF_RECV, TRUE);
+    thrift_transport_flush_timestamps(arrcomp_socket, send_file, THRIFT_PERF_SEND, TRUE);
+    thrift_transport_flush_timestamps(arrcomp_socket, recv_file, THRIFT_PERF_RECV, TRUE);
     fclose(rpc_start_file);
     fclose(send_file);
     fclose(recv_file);
@@ -595,8 +595,8 @@ void add_arrays_perf(SimpleArrayComputationIf *client, int iterations, int max_s
       fprintf(rpc_end_file, "%lu\n", res.rpc_end);
     }
     // socket flush of timestamps
-    thrift_protocol_record_timestamps(arrcomp_protocol, send_file, THRIFT_PERF_SEND, TRUE);
-    thrift_protocol_record_timestamps(arrcomp_protocol, recv_file, THRIFT_PERF_RECV, TRUE);
+    thrift_protocol_flush_timestamps(arrcomp_protocol, send_file, THRIFT_PERF_SEND, TRUE);
+    thrift_protocol_flush_timestamps(arrcomp_protocol, recv_file, THRIFT_PERF_RECV, TRUE);
     fclose(rpc_start_file);
     fclose(send_file);
     fclose(recv_file);
@@ -611,8 +611,8 @@ void test_shared_pointer_perf(RemoteMemoryTestIf *remmem_client, SimpleArrayComp
   // Call perf test for no-op RPC
   no_op_perf(arrcomp_client, iterations);
 
-  thrift_protocol_record_timestamps(arrcomp_protocol, NULL, THRIFT_PERF_SEND, FALSE);
-  thrift_protocol_record_timestamps(arrcomp_protocol, NULL, THRIFT_PERF_RECV, FALSE);
+  thrift_protocol_flush_timestamps(arrcomp_protocol, NULL, THRIFT_PERF_SEND, FALSE);
+  thrift_protocol_flush_timestamps(arrcomp_protocol, NULL, THRIFT_PERF_RECV, FALSE);
 
   printf("Starting increment array performance test...\n");
   // Call perf test for increment array rpc
