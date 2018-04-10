@@ -574,8 +574,8 @@ void increment_array_perf(SimpleArrayComputationIf *client, int iterations, int 
       fprintf(rpc_start_file, "%lu\n", res.rpc_start);
       fprintf(rpc_end_file, "%lu\n", res.rpc_end);
     }
-    thrift_transport_flush_timestamps(arrcomp_socket, send_file, THRIFT_PERF_SEND, TRUE);
-    thrift_transport_flush_timestamps(arrcomp_socket, recv_file, THRIFT_PERF_RECV, TRUE);
+    thrift_transport_flush_timestamps(arrcomp_protocol, send_file, THRIFT_PERF_SEND, TRUE);
+    thrift_transport_flush_timestamps(arrcomp_protocol, recv_file, THRIFT_PERF_RECV, TRUE);
     fclose(rpc_start_file);
     fclose(send_file);
     fclose(recv_file);
