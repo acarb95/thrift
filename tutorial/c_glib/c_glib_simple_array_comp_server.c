@@ -122,14 +122,14 @@ void get_result_pointer(struct in6_memaddr *ptr) {
 
 void marshall_shmem_ptr(GByteArray **ptr, struct in6_memaddr *addr) {
   // Blank cmd section
-  uint16_t cmd = 0u;
+  //uint16_t cmd = 0u;
 
   // Copy wildcard (::)
   *ptr = g_byte_array_append(*ptr, (const gpointer) &(addr->wildcard), sizeof(uint32_t));
   // Copy subid (i.e., 103)
   *ptr = g_byte_array_append(*ptr, (const gpointer) &(addr->subid), sizeof(uint16_t));
   // Copy cmd (0)
-  *ptr = g_byte_array_append(*ptr, (const gpointer) &cmd, sizeof(uint16_t));
+  *ptr = g_byte_array_append(*ptr, (const gpointer) &(addr->cmd), sizeof(uint16_t));
   // Copy memory address (XXXX:XXXX)
   *ptr = g_byte_array_append(*ptr, (const gpointer) &(addr->paddr), sizeof(uint64_t));
 }
@@ -184,6 +184,7 @@ tutorial_simple_array_computation_handler_increment_array (SimpleArrayComputatio
   memcpy(temp, int_arr, length);
 
   // Write it to the array
+  sleep(1);
   write_rmem(targetIP, (char*) temp, &result_addr);
 
   g_byte_array_ref(result_ptr);
@@ -252,6 +253,7 @@ tutorial_simple_array_computation_handler_add_arrays (SimpleArrayComputationIf *
 
   memcpy(temp, result_array, length);
   // Write computation to shared memory
+  sleep(1);
   write_rmem(targetIP, (char*) temp, &result_addr);
 
   // printf("increase ref\n");
@@ -372,6 +374,7 @@ tutorial_simple_array_computation_handler_no_op (SimpleArrayComputationIf  *ifac
   memcpy(temp, int_arr, length);
 
   // Write it to the array
+  sleep(1);
   write_rmem(targetIP, (char*) temp, &result_addr);
 
   g_byte_array_ref(result_ptr);

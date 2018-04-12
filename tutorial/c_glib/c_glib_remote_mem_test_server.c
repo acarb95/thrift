@@ -122,14 +122,14 @@ void get_result_pointer(struct in6_memaddr *ptr) {
 
 void marshall_shmem_ptr(GByteArray **ptr, struct in6_memaddr *addr) {
   // Blank cmd section
-  uint16_t cmd = 0u;
+  //uint16_t cmd = 0u;
 
   // Copy wildcard (::)
   *ptr = g_byte_array_append(*ptr, (const gpointer) &(addr->wildcard), sizeof(uint32_t));
   // Copy subid (i.e., 103)
   *ptr = g_byte_array_append(*ptr, (const gpointer) &(addr->subid), sizeof(uint16_t));
   // Copy cmd (0)
-  *ptr = g_byte_array_append(*ptr, (const gpointer) &cmd, sizeof(uint16_t));
+  *ptr = g_byte_array_append(*ptr, (const gpointer) &(addr->cmd), sizeof(uint16_t));
   // Copy memory address (XXXX:XXXX)
   *ptr = g_byte_array_append(*ptr, (const gpointer) &(addr->paddr), sizeof(uint64_t));
 }
@@ -238,6 +238,7 @@ tutorial_remote_memory_test_handler_write_mem (RemoteMemoryTestIf *iface,
 
   // printf("Calling bluebridge: %s, args_addr: ", message);
   // print_n_bytes((char*)&args_addr, sizeof(args_addr));
+  sleep(1);
   write_rmem(targetIP, (char *) temp, &args_addr);
 
   // printf("write_mem return true\n");

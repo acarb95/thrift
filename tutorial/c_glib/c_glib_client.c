@@ -67,14 +67,14 @@ void get_args_pointer(struct in6_memaddr *ptr, struct sockaddr_in6 *targetIP) {
 
 void marshall_shmem_ptr(GByteArray **ptr, struct in6_memaddr *addr) {
   // Blank cmd section
-  uint16_t cmd = 0u;
+  //uint16_t cmd = 0u;
 
   // Copy wildcard (::)
   *ptr = g_byte_array_append(*ptr, (const gpointer) &(addr->wildcard), sizeof(uint32_t));
   // Copy subid (i.e., 103)
   *ptr = g_byte_array_append(*ptr, (const gpointer) &(addr->subid), sizeof(uint16_t));
   // Copy cmd (0)
-  *ptr = g_byte_array_append(*ptr, (const gpointer) &cmd, sizeof(uint16_t));
+  *ptr = g_byte_array_append(*ptr, (const gpointer) &(addr->cmd), sizeof(uint16_t));
   // Copy memory address (XXXX:XXXX)
   *ptr = g_byte_array_append(*ptr, (const gpointer) &(addr->paddr), sizeof(uint64_t));
 }
@@ -159,7 +159,6 @@ uint64_t test_server_alloc(RemoteMemoryTestIf *client, GByteArray **res, CallExc
 uint64_t test_server_write(RemoteMemoryTestIf *client, GByteArray *res, CallException *exception, GError *error, gboolean print) {
   if (print)
     printf("Testing write_mem...\t\t");
-
   // Clear payload
   char *payload = malloc(4096);
   snprintf(payload, 50, "HELLO WORLD! How are you?");
