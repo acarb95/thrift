@@ -184,7 +184,6 @@ tutorial_simple_array_computation_handler_increment_array (SimpleArrayComputatio
   memcpy(temp, int_arr, length);
 
   // Write it to the array
-  sleep(1);
   write_rmem(targetIP, (char*) temp, &result_addr);
 
   g_byte_array_ref(result_ptr);
@@ -253,7 +252,6 @@ tutorial_simple_array_computation_handler_add_arrays (SimpleArrayComputationIf *
 
   memcpy(temp, result_array, length);
   // Write computation to shared memory
-  sleep(1);
   write_rmem(targetIP, (char*) temp, &result_addr);
 
   // printf("increase ref\n");
@@ -374,7 +372,6 @@ tutorial_simple_array_computation_handler_no_op (SimpleArrayComputationIf  *ifac
   memcpy(temp, int_arr, length);
 
   // Write it to the array
-  sleep(1);
   write_rmem(targetIP, (char*) temp, &result_addr);
 
   g_byte_array_ref(result_ptr);

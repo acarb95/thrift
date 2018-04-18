@@ -238,7 +238,6 @@ tutorial_remote_memory_test_handler_write_mem (RemoteMemoryTestIf *iface,
 
   // printf("Calling bluebridge: %s, args_addr: ", message);
   // print_n_bytes((char*)&args_addr, sizeof(args_addr));
-  sleep(1);
   write_rmem(targetIP, (char *) temp, &args_addr);
 
   // printf("write_mem return true\n");
