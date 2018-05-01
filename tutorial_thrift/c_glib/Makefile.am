@@ -18,11 +18,10 @@
 #
 AUTOMAKE_OPTIONS = subdir-objects serial-tests
 
-bluebridge_sources := $(shell find "$(top_srcdir)/../obj/lib" -name '*.o')
 
 AM_CFLAGS = -g -Wall -Wextra -pedantic $(GLIB_CFLAGS) $(GOBJECT_CFLAGS) @GCOV_CFLAGS@
 AM_CPPFLAGS = -I$(top_srcdir)/lib/c_glib/src -Igen-c_glib -I$(top_srcdir)/../obj/lib
-AM_LDFLAGS = $(GLIB_LIBS) $(GOBJECT_LIBS) @GCOV_LDFLAGS@ $(bluebridge_sources)
+AM_LDFLAGS = $(GLIB_LIBS) $(GOBJECT_LIBS) @GCOV_LDFLAGS@ -L../../../ -lbluebridge
 
 THRIFT = $(top_builddir)/compiler/cpp/thrift
 
