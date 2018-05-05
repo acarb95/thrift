@@ -252,7 +252,7 @@ thrift_server_socket_class_init (ThriftServerSocketClass *cls)
                                   "Set the accept backlog",
                                   0, /* max */
                                   65534, /* max */
-                                  1024, /* default */
+                                  16384, /* default */
                                   G_PARAM_CONSTRUCT_ONLY |
                                   G_PARAM_READWRITE);
   g_object_class_install_property (gobject_class,

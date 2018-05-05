@@ -208,7 +208,7 @@ thrift_memory_buffer_class_init (ThriftMemoryBufferClass *cls)
                                   "Set the read buffer size",
                                   0, /* min */
                                   1048576, /* max, 1024*1024 */
-                                  512, /* default value */
+                                  16384, /* default value */
                                   G_PARAM_CONSTRUCT_ONLY |
                                   G_PARAM_READWRITE);
   g_object_class_install_property (gobject_class,

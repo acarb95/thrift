@@ -65,7 +65,7 @@ void marshall_shmem_ptr(GByteArray **ptr, struct in6_memaddr *addr) {
   uint16_t cmd = 0u;
 
   // Copy wildcard (::)
-  *ptr = g_byte_array_append(*ptr, (const gpointer) &(addr->wildcard), sizeof(uint32_t));
+  *ptr = g_byte_array_append(*ptr, (const gpointer) &(addr->cmd), sizeof(uint32_t));
   // Copy subid (i.e., 103)
   *ptr = g_byte_array_append(*ptr, (const gpointer) &(addr->subid), sizeof(uint16_t));
   // Copy cmd (0)
