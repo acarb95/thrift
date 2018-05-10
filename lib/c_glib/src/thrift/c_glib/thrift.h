@@ -25,7 +25,7 @@
 #endif
 
 #include <glib.h>
-
+#include <stdint.h>
 /* this macro is called to satisfy -Wall hardcore compilation */
 #ifndef THRIFT_UNUSED_VAR
 # define THRIFT_UNUSED_VAR(x) ((void) x)
@@ -34,5 +34,12 @@
 void thrift_hash_table_get_keys (gpointer key, gpointer value,
                                  gpointer user_data);
 void thrift_string_free (gpointer str);
+
+static inline uint64_t getns(void)
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (((uint64_t)ts.tv_sec) * 1000000000ULL) + ts.tv_nsec;
+}
 
 #endif // #ifndef _THRIFT_THRIFT_H

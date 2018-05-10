@@ -25,8 +25,6 @@
 #include <thrift/c_glib/protocol/thrift_protocol.h>
 #include <thrift/c_glib/protocol/thrift_binary_protocol.h>
 
-#include "../../../../../../../lib/utils.h"
-
 G_DEFINE_TYPE(ThriftBinaryProtocol, thrift_binary_protocol, THRIFT_TYPE_PROTOCOL)
 
 static guint64
