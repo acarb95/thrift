@@ -48,6 +48,12 @@ thrift_bitwise_cast_gdouble (guint64 v)
   u.from = v;
   return u.to;
 }
+static inline uint64_t getns(void)
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (((uint64_t)ts.tv_sec) * 1000000000ULL) + ts.tv_nsec;
+}
 
 gint32 
 thrift_binary_protocol_flush_timestamps (ThriftProtocol *protocol, FILE* out,
